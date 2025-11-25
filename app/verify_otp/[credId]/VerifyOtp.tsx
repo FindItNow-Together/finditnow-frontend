@@ -1,9 +1,20 @@
 "use client"
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {clearInterval, setInterval} from "node:timers";
+
 
 export default function VerifyOtp({credId}: { credId: string }) {
-
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+    const [showResendLink, setShowResendLink] = useState(false);
+    const [resendTimer, setResendTimer] = useState(45);
+
+    const resendTimerInterval = setInterval(() => setResendTimer(prev => prev--), 1000)
+
+    // function setResendInterval(setResendTimer: Dispatch<SetStateAction<number>>) {
+    //     resendTimerInterval = setInterval(() => setResendTimer(prev => prev--), 1000)
+    // }
+
+
     const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
     const handleChange = (index: number, value: string) => {
@@ -38,6 +49,32 @@ export default function VerifyOtp({credId}: { credId: string }) {
         console.log(data);
     };
 
+    const resendVerificationEmail = async () => {
+        const res = await fetch("/api/verifyemail", {
+            method: "POST",
+            body: JSON.stringify({credId}),
+            headers: {"Content-Type": "application/json"}
+        });
+
+        if (!res.ok) {
+            console.log("error in resend")
+            return
+        }
+
+        const data = await res.json();
+
+        console.log("RESEND RESPONSE:::", data)
+
+        setShowResendLink(false)
+    }
+
+    useEffect(() => {
+        if (resendTimer == 0) {
+            clearInterval(resendTimerInterval);
+            setShowResendLink(true)
+        }
+    }, [resendTimer, resendTimerInterval])
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-400">
             <div className="bg-white w-full max-w-md p-10 rounded-xl shadow-xl flex flex-col space-y-8">
@@ -70,6 +107,12 @@ export default function VerifyOtp({credId}: { credId: string }) {
                 >
                     Verify
                 </button>
+
+                <div>Resend available in: <span className="ml-2 text-gray-600">{showResendLink ?
+                    <button className="border-0 text-blue-500 cursor-pointer hover:underline"
+                            onClick={resendVerificationEmail}>Resend
+                        Email</button> : resendTimer
+                }</span></div>
             </div>
         </div>
     );

@@ -13,7 +13,7 @@ function SignUp() {
 
         const res = await fetch("/api/signup", {
             method: "POST",
-            body: JSON.stringify(Object.fromEntries(formData.entries())),  // no JSON.stringify
+            body: JSON.stringify(Object.fromEntries(formData.entries())),
             headers: {
                 "Content-Type": "application/json"
             }
