@@ -2,13 +2,12 @@
 import {useEffect, useRef, useState} from "react";
 import {clearInterval, setInterval} from "node:timers";
 
-
+let resendTimerInterval: NodeJS.Timeout;
 export default function VerifyOtp({credId}: { credId: string }) {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
-    const [showResendLink, setShowResendLink] = useState(false);
-    const [resendTimer, setResendTimer] = useState(45);
+    const [resendTimer, setResendTimer] = useState(5);
+    const [disableResend, setDisableResend] = useState(false);
 
-    const resendTimerInterval = setInterval(() => setResendTimer(prev => prev--), 1000)
 
     // function setResendInterval(setResendTimer: Dispatch<SetStateAction<number>>) {
     //     resendTimerInterval = setInterval(() => setResendTimer(prev => prev--), 1000)
@@ -50,40 +49,52 @@ export default function VerifyOtp({credId}: { credId: string }) {
     };
 
     const resendVerificationEmail = async () => {
-        const res = await fetch("/api/verifyemail", {
-            method: "POST",
-            body: JSON.stringify({credId}),
-            headers: {"Content-Type": "application/json"}
-        });
+        setDisableResend(true);
+        try {
+            const res = await fetch("/api/resendverificationemail", {
+                method: "POST",
+                body: JSON.stringify({credId}),
+                headers: {"Content-Type": "application/json"}
+            });
 
-        if (!res.ok) {
-            console.log("error in resend")
-            return
+            if (!res.ok) {
+                console.log("error in resend")
+                return
+            }
+            setResendTimer(45);
+        } catch (err) {
+            console.log(err)
         }
 
-        const data = await res.json();
-
-        console.log("RESEND RESPONSE:::", data)
-
-        setShowResendLink(false)
+        setDisableResend(false)
     }
 
     useEffect(() => {
-        if (resendTimer == 0) {
-            clearInterval(resendTimerInterval);
-            setShowResendLink(true)
+        if (resendTimerInterval) {
+            if (resendTimer == 0) {
+                clearInterval(resendTimerInterval);
+                // @ts-expect-error to set the resendInterval undefined until when the resend is successful
+                resendTimerInterval = undefined;
+            }
+        } else {
+            resendTimerInterval = setInterval(() => setResendTimer(prev => prev - 1), 1000)
         }
-    }, [resendTimer, resendTimerInterval])
+
+    }, [resendTimer])
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-400">
-            <div className="bg-white w-full max-w-md p-10 rounded-xl shadow-xl flex flex-col space-y-8">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300">
+            <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg space-y-8 border border-gray-200">
 
-                <h1 className="text-3xl font-semibold text-gray-800 text-center">
+                <h1 className="text-4xl font-semibold text-gray-900 text-center tracking-tight">
                     FindItNow
                 </h1>
 
-                <div className="flex justify-between">
+                <p className="text-center text-gray-600">
+                    Enter the 6-digit verification code sent to your email
+                </p>
+
+                <div className="flex justify-between gap-3">
                     {digits.map((digit, i) => (
                         <input
                             key={i}
@@ -95,25 +106,52 @@ export default function VerifyOtp({credId}: { credId: string }) {
                             ref={(el) => {
                                 inputsRef.current[i] = el;
                             }}
-                            className="w-12 h-12 border border-gray-300 rounded-md text-center text-2xl focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800"
+                            className="
+                        w-12 h-14 border border-gray-300 rounded-lg
+                        text-center text-2xl font-medium text-gray-800
+                        focus:outline-none focus:ring-2 focus:ring-black focus:border-black
+                        transition-all
+                    "
                         />
                     ))}
                 </div>
 
                 <button
                     onClick={verifyOtp}
-                    className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition disabled:bg-gray-500 disabled:cursor-not-allowed"
                     disabled={digits.join("").length !== 6}
+                    className="
+                w-full py-3 rounded-lg font-medium
+                bg-black text-white
+                hover:bg-gray-900
+                transition-all
+                disabled:bg-gray-400 disabled:cursor-not-allowed
+            "
                 >
                     Verify
                 </button>
 
-                <div>Resend available in: <span className="ml-2 text-gray-600">{showResendLink ?
-                    <button className="border-0 text-blue-500 cursor-pointer hover:underline"
-                            onClick={resendVerificationEmail}>Resend
-                        Email</button> : resendTimer
-                }</span></div>
+                <div className="text-center text-gray-600">
+                    Resend available in:
+                    <span className="ml-2">
+                {resendTimer === 0 ? (
+                    <button
+                        onClick={resendVerificationEmail}
+                        disabled={disableResend}
+                        className="
+                            text-blue-600 hover:text-blue-700 hover:underline
+                            disabled:text-gray-400 disabled:no-underline
+                        "
+                    >
+                        Resend Email
+                    </button>
+                ) : (
+                    <span className="font-medium">{resendTimer}s</span>
+                )}
+            </span>
+                </div>
+
             </div>
         </div>
+
     );
 }
