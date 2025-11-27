@@ -1,10 +1,10 @@
 'use client';
 
-import {FormEvent} from "react";
+import {FormEvent, useState} from "react";
 import {useRouter} from "next/navigation";
 
 function SignUp() {
-
+    const [error, setError] = useState("");
     const router = useRouter();
 
     async function signUpUser(e: FormEvent<HTMLFormElement>) {
@@ -21,10 +21,16 @@ function SignUp() {
 
         const data = await res.json()
 
-        if((data.credId as string).length==0){
-            console.log("ERROR: ", "IN SIGNUP")
+        if (data.error) {
+            if (data.error == "account_not_verified") {
+                router.push("/verify_otp/" + data.credId);
+                return
+            }
+
+            setError((data.error as string).split("_").join(" "))
             return
         }
+
         router.push(`/verify_otp/${data.credId}`);
     }
 
@@ -57,6 +63,11 @@ function SignUp() {
                         className="w-full p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
                     />
 
+                    {error ? (
+                        <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
+                            {error}
+                        </div>
+                    ) : null}
                     <button className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition">
                         Sign Up
                     </button>

@@ -1,12 +1,16 @@
 "use client"
 import {useEffect, useRef, useState} from "react";
 import {clearInterval, setInterval} from "node:timers";
+import {useAuth} from "@/app/_auth_context/AuthContext";
+import {useRouter} from "next/navigation";
 
 let resendTimerInterval: NodeJS.Timeout;
 export default function VerifyOtp({credId}: { credId: string }) {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [resendTimer, setResendTimer] = useState(5);
     const [disableResend, setDisableResend] = useState(false);
+    const {setAccessToken} = useAuth();
+    const router = useRouter();
 
 
     // function setResendInterval(setResendTimer: Dispatch<SetStateAction<number>>) {
@@ -46,6 +50,9 @@ export default function VerifyOtp({credId}: { credId: string }) {
 
         const data = await res.json();
         console.log(data);
+        setAccessToken(data.accessToken);
+
+        router.push("/home")
     };
 
     const resendVerificationEmail = async () => {

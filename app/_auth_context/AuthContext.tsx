@@ -1,0 +1,50 @@
+"use client";
+
+import React, {createContext, useContext, useState} from "react";
+
+export type AuthContextType = {
+    accessToken: string | null;
+    setAccessToken: React.Dispatch<React.SetStateAction<string | null>>;
+    logout: (cb?: () => void) => void;
+};
+
+export const AuthContext = createContext<AuthContextType>({
+    accessToken: null,
+    setAccessToken: () => {
+    },
+    logout: () => {
+    },
+});
+
+export function AuthProvider({children}: { children: React.ReactNode }) {
+    const [accessToken, setAccessToken] = useState<string | null>("");
+
+    const logout = (cb?: () => void) => {
+        fetch("/api/logout", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + accessToken
+            }
+        }).then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error: ${res.status}`);
+            }
+            return res.json();
+        }).then(data => {
+            setAccessToken("");
+            if (cb) {
+                cb();
+            }
+        }).catch(err => console.log(err))
+    }
+
+    return (
+        <AuthContext.Provider value={{accessToken, setAccessToken, logout}}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+export function useAuth() {
+    return useContext(AuthContext);
+}
