@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
     async rewrites() {
         return [
             {
-                source: "/api/clear-refresh-cookie",
-                destination: "/api/clear-refresh-cookie", // treat as internal
+                source: "/api/clear-cookie",
+                destination: "/api/clear-cookie", // treat as internal
             },
             {
                 source: "/api/:path*",

@@ -1,6 +1,6 @@
 'use client'
 import {FormEvent} from "react";
-import {FormLevel} from "@/app/forgot_password/page";
+import {FormLevel} from "@/app/(public)/forgot_password/page";
 import {useRouter} from "next/navigation";
 
 type FormLevelProps = {

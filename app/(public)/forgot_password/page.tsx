@@ -1,6 +1,6 @@
 'use client'
 import {useState} from "react";
-import {ResetPassword, SendVerification, VerifyPasswordToken} from "@/app/forgot_password/FormLevelComponents";
+import {ResetPassword, SendVerification, VerifyPasswordToken} from "@/app/(public)/forgot_password/FormLevelComponents";
 
 export type FormLevel = {
     name: string,

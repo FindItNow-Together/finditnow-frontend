@@ -3,13 +3,8 @@ import {useAuth} from "@/contexts/AuthContext";
 import {useRouter} from "next/navigation";
 
 export default function UserHome() {
-    const {accessToken, logout} = useAuth();
+    const {logout} = useAuth();
     const route = useRouter();
-
-    if (accessToken == null || accessToken.length == 0) {
-        route.replace("/")
-        return
-    }
 
     const handleLogout = () => {
         logout(() => route.push("/"))

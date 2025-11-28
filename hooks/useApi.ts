@@ -10,10 +10,6 @@ interface ApiOptions extends Omit<RequestInit, "method"> {
 }
 
 function rewriteUrl(url: string): string {
-    if (typeof url !== "string") {
-        throw new Error("Invalid URL");
-    }
-
     if (!url.length) {
         throw new Error("URL cannot be empty");
     }
@@ -65,8 +61,9 @@ async function coreRequest(
     }
 
     // Try refresh token
-    const refreshRes = await fetch("/api/refresh-token", {
+    const refreshRes = await fetch("/api/refresh", {
         method: "POST",
+        credentials: "include"
     });
 
     if (!refreshRes.ok) {
