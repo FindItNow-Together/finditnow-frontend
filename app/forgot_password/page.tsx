@@ -4,7 +4,7 @@ import {ResetPassword, SendVerification, VerifyPasswordToken} from "@/app/forgot
 
 export type FormLevel = {
     name: string,
-    data?: object,
+    data?: { email: string },
     error?: string
 }
 

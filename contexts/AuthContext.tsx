@@ -30,12 +30,18 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 throw new Error(`HTTP error: ${res.status}`);
             }
             return res.json();
-        }).then(data => {
+        }).then(() => {
             setAccessToken("");
             if (cb) {
                 cb();
             }
-        }).catch(err => console.log(err))
+        }).catch(() => {
+            fetch("/api/clear-cookie", {method: "POST"}).then(() => {
+                if (cb) {
+                    cb()
+                }
+            })
+        })
     }
 
     return (

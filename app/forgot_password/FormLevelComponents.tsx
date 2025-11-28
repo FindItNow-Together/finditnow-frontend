@@ -27,7 +27,7 @@ export function SendVerification(props: FormLevelProps) {
             setFormLevel({...formLevel, error: data.error.split("_").join(" ")})
             return
         }
-        setFormLevel({...formLevel, error: undefined, name: "verify", data: {email: formData.get("email")}})
+        setFormLevel({...formLevel, error: undefined, name: "verify", data: {email: formData.get("email") as string}})
     }
     return <form className="flex flex-col space-y-4 text-gray-800" onSubmit={sendVerificationEmail}>
         <input
@@ -81,7 +81,7 @@ export function VerifyPasswordToken(props: FormLevelProps) {
             minLength={8}
             maxLength={8}
             name="resetToken"
-            placeholder="Email"
+            placeholder="Verification Token..."
             className="w-full p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             required
         />

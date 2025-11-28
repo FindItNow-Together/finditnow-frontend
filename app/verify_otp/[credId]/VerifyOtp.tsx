@@ -1,7 +1,7 @@
 "use client"
 import {useEffect, useRef, useState} from "react";
 import {clearInterval, setInterval} from "node:timers";
-import {useAuth} from "@/app/_auth_context/AuthContext";
+import {useAuth} from "@/contexts/AuthContext";
 import {useRouter} from "next/navigation";
 
 let resendTimerInterval: NodeJS.Timeout;

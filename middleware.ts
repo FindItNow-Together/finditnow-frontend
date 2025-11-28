@@ -1,0 +1,18 @@
+import type {NextRequest} from "next/server";
+import {NextResponse} from "next/server";
+
+export function middleware(req: NextRequest) {
+    const refresh = req.cookies.get("refresh_token")?.value;
+
+    if (!refresh) {
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    return NextResponse.next();
+}
+
+export const config = {
+    matcher: [
+        "/(protected/:path*)",   // match anything inside (protected)
+    ],
+};
