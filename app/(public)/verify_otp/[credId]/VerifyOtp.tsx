@@ -3,20 +3,16 @@ import {useEffect, useRef, useState} from "react";
 import {clearInterval, setInterval} from "node:timers";
 import {useAuth} from "@/contexts/AuthContext";
 import {useRouter} from "next/navigation";
+import useApi from "@/hooks/useApi";
 
-let resendTimerInterval: NodeJS.Timeout;
+let resendTimerInterval: NodeJS.Timeout | undefined;
 export default function VerifyOtp({credId}: { credId: string }) {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [resendTimer, setResendTimer] = useState(5);
     const [disableResend, setDisableResend] = useState(false);
     const {setAccessToken} = useAuth();
     const router = useRouter();
-
-
-    // function setResendInterval(setResendTimer: Dispatch<SetStateAction<number>>) {
-    //     resendTimerInterval = setInterval(() => setResendTimer(prev => prev--), 1000)
-    // }
-
+    const api = useApi();
 
     const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -42,14 +38,10 @@ export default function VerifyOtp({credId}: { credId: string }) {
         const code = digits.join("");
         if (code.length !== 6) return;
 
-        const res = await fetch("/api/verifyemail", {
-            method: "POST",
-            body: JSON.stringify({credId, verificationCode: code}),
-            headers: {"Content-Type": "application/json"}
-        });
+        const res = await api.post("/api/verifyemail", {credId, verificationCode: code})
 
         const data = await res.json();
-        console.log(data);
+
         setAccessToken(data.accessToken);
 
         router.push("/home")
@@ -58,11 +50,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
     const resendVerificationEmail = async () => {
         setDisableResend(true);
         try {
-            const res = await fetch("/api/resendverificationemail", {
-                method: "POST",
-                body: JSON.stringify({credId}),
-                headers: {"Content-Type": "application/json"}
-            });
+            const res = await api.post("/api/resendverificationemail", {credId})
 
             if (!res.ok) {
                 console.log("error in resend")
@@ -80,7 +68,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
         if (resendTimerInterval) {
             if (resendTimer == 0) {
                 clearInterval(resendTimerInterval);
-                // @ts-expect-error to set the resendInterval undefined until when the resend is successful
+
                 resendTimerInterval = undefined;
             }
         } else {
