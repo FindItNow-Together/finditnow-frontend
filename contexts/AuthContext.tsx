@@ -1,6 +1,7 @@
 "use client";
 
 import React, {createContext, useContext, useState} from "react";
+import useApi from "@/hooks/useApi";
 
 export type AuthContextType = {
     accessToken: string | null;
@@ -18,14 +19,10 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({children}: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>("");
+    const api = useApi();
 
     const logout = (cb?: () => void) => {
-        fetch("/api/logout", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + accessToken
-            }
-        }).then(res => {
+        api.post("/api/logout", {}, {headers: {"Authorization": "Bearer " + accessToken}}).then(res => {
             if (!res.ok) {
                 throw new Error(`HTTP error: ${res.status}`);
             }

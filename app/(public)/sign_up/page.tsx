@@ -2,8 +2,10 @@
 
 import {FormEvent, useState} from "react";
 import {useRouter} from "next/navigation";
+import useApi from "@/hooks/useApi";
 
 function SignUp() {
+    const api = useApi();
     const [error, setError] = useState("");
     const router = useRouter();
 
@@ -11,13 +13,7 @@ function SignUp() {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
-        const res = await fetch("/api/signup", {
-            method: "POST",
-            body: JSON.stringify(Object.fromEntries(formData.entries())),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
+        const res = await api.post("/api/signup", Object.fromEntries(formData.entries()))
 
         const data = await res.json()
 

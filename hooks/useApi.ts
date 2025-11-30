@@ -2,10 +2,10 @@
 
 import {useAuth} from "@/contexts/AuthContext"; // adjust import to your path
 
-type ApiMethod = "public" | "private";
+type ApiAccess = "public" | "private";
 
 interface ApiOptions extends Omit<RequestInit, "method"> {
-    auth?: ApiMethod;          // "private" or "public"
+    auth?: ApiAccess;          // "private" or "public"
     method?: RequestInit["method"];
 }
 
@@ -16,7 +16,7 @@ function rewriteUrl(url: string): string {
 
     // Rewrite internal API paths to backend
     if (url.startsWith("/api/")) {
-        return url.replace("/api/", "http://localhost:8081/");
+        return url.replace("/api/", "http://localhost:8080/");
     }
 
     return url;
@@ -47,6 +47,7 @@ async function coreRequest(
     const response = await fetch(rewritten, {
         ...options,
         headers,
+        credentials: "include",
     });
 
     if (response.status !== 401) {
@@ -56,7 +57,7 @@ async function coreRequest(
     // Attempt reading error
     const errorBody = await response.clone().json().catch(() => null);
 
-    if (!errorBody || errorBody.error !== "token_expired") {
+    if (rewritten.endsWith("logout") || !errorBody || errorBody.error !== "token_expired") {
         return response;
     }
 

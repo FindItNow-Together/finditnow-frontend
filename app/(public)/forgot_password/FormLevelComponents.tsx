@@ -2,6 +2,7 @@
 import {FormEvent} from "react";
 import {FormLevel} from "@/app/(public)/forgot_password/page";
 import {useRouter} from "next/navigation";
+import useApi from "@/hooks/useApi";
 
 type FormLevelProps = {
     setFormLevel: (arg: FormLevel) => void,
@@ -9,17 +10,15 @@ type FormLevelProps = {
 }
 
 export function SendVerification(props: FormLevelProps) {
+    const api = useApi();
     const {formLevel, setFormLevel} = props;
     const sendVerificationEmail = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const res = await fetch("/api/sendresettoken", {
-            method: "POST",
-            body: JSON.stringify(Object.fromEntries(formData.entries())),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
+        const res = await api.post("/api/sendresettoken", Object.fromEntries(formData.entries()),
+            {
+                auth: "public"
+            })
 
         const data = await res.json();
 
@@ -53,18 +52,16 @@ export function SendVerification(props: FormLevelProps) {
 }
 
 export function VerifyPasswordToken(props: FormLevelProps) {
+    const api = useApi()
     const {formLevel, setFormLevel} = props;
     const verifyToken = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formdata = new FormData(e.currentTarget);
+        const formData = new FormData(e.currentTarget);
 
-        const res = await fetch("/api/sendresettoken", {
-            method: "POST",
-            body: JSON.stringify({...Object.fromEntries(formdata.entries()), email: formLevel.data?.email}),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
+        const res = await api.post("/api/verifyresettoken", Object.fromEntries(formData.entries()),
+            {
+                auth: "public"
+            })
 
         const data = await res.json();
 
@@ -101,23 +98,21 @@ export function VerifyPasswordToken(props: FormLevelProps) {
 }
 
 export function ResetPassword(props: FormLevelProps) {
+    const api = useApi();
     const router = useRouter();
     const {formLevel, setFormLevel} = props;
     const verifyToken = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formdata = new FormData(e.currentTarget);
+        const formData = new FormData(e.currentTarget);
 
-        if (formdata.get("newPassword") !== formdata.get("confirmPwd")) {
+        if (formData.get("newPassword") !== formData.get("confirmPwd")) {
             setFormLevel({...formLevel, error: "Passwords dont match"})
             return
         }
-        const res = await fetch("/api/resetpassword", {
-            method: "PUT",
-            body: JSON.stringify({...Object.fromEntries(formdata.entries()), email: formLevel.data?.email}),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
+        const res = await api.post("/api/resetpassword", Object.fromEntries(formData.entries()),
+            {
+                auth: "public"
+            })
 
         const data = await res.json();
 

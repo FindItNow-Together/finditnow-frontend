@@ -3,28 +3,25 @@ import Image from "next/image"
 import {FormEvent, useState} from "react";
 import {useAuth} from "@/contexts/AuthContext";
 import {useRouter} from "next/navigation";
+import useApi from "@/hooks/useApi";
 
 function Login() {
     const [error, setError] = useState("");
     const router = useRouter();
     const {setAccessToken} = useAuth();
+    const api = useApi();
 
     const login = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
 
-        fetch("/api/signin", {
-            method: "POST",
-            body: JSON.stringify(Object.fromEntries(data.entries())),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }).then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP error: ${res.status}`);
-            }
-            return res.json();
-        })
+        api.post("/api/signin", Object.fromEntries(data.entries()), {auth: "public"})
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.error) {
                     if (data.error == "account_not_verified") {
@@ -32,12 +29,12 @@ function Login() {
                         return;
                     }
                     setError((data.error as string).split("_").join(" "))
+                    return;
                 }
                 setAccessToken(data.accessToken)
                 router.push("/home")
             })
             .catch(err => alert(err))
-
 
     }
 

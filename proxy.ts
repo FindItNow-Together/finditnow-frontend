@@ -13,6 +13,6 @@ export function proxy(req: NextRequest) {
 
 export const config = {
     matcher: [
-        "/(protected/:path*)",   // match anything inside (protected)
+        "/((?!login|sign_up|verify_otp|forgot_password|api|_next|favicon.ico).*)",
     ],
 };
