@@ -6,12 +6,17 @@ import useApi from "@/hooks/useApi";
 export type AuthContextType = {
     accessToken: string | null;
     setAccessToken: React.Dispatch<React.SetStateAction<string | null>>;
+    accessRole: string | null;
+    setAccessRole: React.Dispatch<React.SetStateAction<string | null>>;
     logout: (cb?: () => void) => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
     accessToken: null,
+    accessRole: null,
     setAccessToken: () => {
+    },
+    setAccessRole: () => {
     },
     logout: () => {
     },
@@ -19,6 +24,7 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({children}: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>("");
+    const [accessRole, setAccessRole] = useState<string | null>("");
     const api = useApi();
 
     const logout = (cb?: () => void) => {
@@ -29,6 +35,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             return res.json();
         }).then(() => {
             setAccessToken("");
+            setAccessRole("");
             if (cb) {
                 cb();
             }
@@ -42,7 +49,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{accessToken, setAccessToken, logout}}>
+        <AuthContext.Provider value={{accessToken, setAccessToken, accessRole, setAccessRole, logout}}>
             {children}
         </AuthContext.Provider>
     );

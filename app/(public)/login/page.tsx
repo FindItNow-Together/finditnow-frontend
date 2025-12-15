@@ -8,7 +8,7 @@ import useApi from "@/hooks/useApi";
 function Login() {
     const [error, setError] = useState("");
     const router = useRouter();
-    const {setAccessToken} = useAuth();
+    const {setAccessToken, setAccessRole} = useAuth();
     const api = useApi();
 
     const login = (e: FormEvent<HTMLFormElement>) => {
@@ -32,7 +32,26 @@ function Login() {
                     return;
                 }
                 setAccessToken(data.accessToken)
-                router.push("/home")
+                setAccessRole(data.profile as string)
+                let route;
+
+                switch (data.profile as string) {
+                    case "CUSTOMER":
+                        route = "/home"
+                        break;
+                    case "ADMIN":
+                        route = "/admin/dashboard";
+                        break;
+                    case "SHOP":
+                        route = "/shop";
+                        break;
+                    case "DELIVERY":
+                        route = "/delivery";
+                        break;
+                    default:
+                        route = "/home";
+                }
+                router.push(route)
             })
             .catch(err => alert(err))
 

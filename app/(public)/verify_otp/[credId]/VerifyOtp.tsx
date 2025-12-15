@@ -10,7 +10,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [resendTimer, setResendTimer] = useState(5);
     const [disableResend, setDisableResend] = useState(false);
-    const {setAccessToken} = useAuth();
+    const {setAccessToken, setAccessRole} = useAuth();
     const router = useRouter();
     const api = useApi();
 
@@ -43,8 +43,26 @@ export default function VerifyOtp({credId}: { credId: string }) {
         const data = await res.json();
 
         setAccessToken(data.accessToken);
+        setAccessRole(data.profile as string)
+        let route;
 
-        router.push("/home")
+        switch (data.profile as string) {
+            case "CUSTOMER":
+                route = "/home"
+                break;
+            case "ADMIN":
+                route = "/admin";
+                break;
+            case "SHOP":
+                route = "/shop";
+                break;
+            case "DELIVERY":
+                route = "/delivery";
+                break;
+            default:
+                route = "/home";
+        }
+        router.push(route)
     };
 
     const resendVerificationEmail = async () => {
