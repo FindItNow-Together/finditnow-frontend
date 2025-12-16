@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { shopApi, productApi } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
 import { Shop } from '@/types/shop';
 import { Product } from '@/types/product';
 import ShopCard from '@/components/ShopCard';
+import {useAuth} from "@/contexts/AuthContext";
 
 export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -80,9 +80,9 @@ export default function DashboardPage() {
     });
   }, [shops, searchQuery, shopsWithProducts]);
 
-  if (isLoading) {
-    return <div className="container">Loading...</div>;
-  }
+  // if (isLoading) {
+  //   return <div className="container">Loading...</div>;
+  // }
 
   if (!isAuthenticated) {
     return null;

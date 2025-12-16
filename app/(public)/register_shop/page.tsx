@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { shopApi } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
 import { DeliveryOption } from '@/types/shop';
+import {useAuth} from "@/contexts/AuthContext";
 
 const deliveryOptions = [
   { value: 'NO_DELIVERY', label: 'No Delivery Service' },
@@ -27,7 +27,7 @@ export default function RegisterShopPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   /**
    * Helper to fetch the user's current geolocation using the browser API.
@@ -59,9 +59,9 @@ export default function RegisterShopPage() {
     fetchCurrentLocation();
   }, []);
 
-  if (isLoading) {
-    return <div className="container">Loading...</div>;
-  }
+  // if (isLoading) {
+  //   return <div className="container">Loading...</div>;
+  // }
 
   if (!isAuthenticated) {
     return null;

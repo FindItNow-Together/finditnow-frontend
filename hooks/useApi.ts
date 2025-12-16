@@ -27,6 +27,7 @@ async function coreRequest(
     options: ApiOptions,
     accessToken: string | null,
     setAccessToken: (t: string | null) => void,
+    setAccessRole: (t: string | null)=>void,
     logout: () => void
 ) {
     const rewritten = rewriteUrl(url);
@@ -57,7 +58,7 @@ async function coreRequest(
     // Attempt reading error
     const errorBody = await response.clone().json().catch(() => null);
 
-    if (rewritten.endsWith("logout") || !errorBody || errorBody.error !== "token_expired") {
+    if (rewritten.endsWith("logout") || rewritten.endsWith("refresh") || !errorBody || errorBody.error !== "token_expired") {
         return response;
     }
 
@@ -74,6 +75,7 @@ async function coreRequest(
 
     const refreshData = await refreshRes.json();
     const newAccessToken = refreshData.accessToken;
+    const accessRole = refreshData.profile;
 
     if (!newAccessToken) {
         logout();
@@ -82,6 +84,7 @@ async function coreRequest(
 
     // Update memory token
     setAccessToken(newAccessToken);
+    setAccessRole(accessRole);
 
     // Retry original with new token
     const retryHeaders = {
@@ -95,12 +98,11 @@ async function coreRequest(
     });
 }
 
-
 export default function useApi() {
-    const {accessToken, setAccessToken, logout} = useAuth();
+    const {accessToken, setAccessToken, logout, setAccessRole} = useAuth();
 
     const get = (url: string, options: ApiOptions = {}) =>
-        coreRequest(url, {...options, method: "GET"}, accessToken, setAccessToken, logout);
+        coreRequest(url, {...options, method: "GET"}, accessToken, setAccessToken,setAccessRole, logout);
 
     const post = (url: string, body: any, options: ApiOptions = {}) =>
         coreRequest(url, {
@@ -110,6 +112,7 @@ export default function useApi() {
             },
             accessToken,
             setAccessToken,
+            setAccessRole,
             logout
         );
 

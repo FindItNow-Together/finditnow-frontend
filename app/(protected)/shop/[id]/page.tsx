@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { shopApi, productApi } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
 import { Shop } from '@/types/shop';
 import { Product } from '@/types/product';
 import ProductForm from '@/components/ProductForm';
+import {useAuth} from "@/contexts/AuthContext";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: 'No Delivery Service',
@@ -33,7 +33,7 @@ export default function ShopDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -143,9 +143,9 @@ export default function ShopDetailsPage() {
     });
   }, [products, searchQuery]);
 
-  if (isLoading) {
-    return <div className="container">Loading...</div>;
-  }
+  // if (isLoading) {
+  //   return <div className="container">Loading...</div>;
+  // }
 
   if (!isAuthenticated) {
     return null;

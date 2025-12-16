@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { shopApi } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
 import { Shop } from '@/types/shop';
+import {useAuth} from "@/contexts/AuthContext";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: 'No Delivery Service',
@@ -61,7 +61,7 @@ export default function DeleteShopsPage() {
   const router = useRouter();
   
   // Authentication hook to check if user is logged in
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   /**
    * Effect hook: Load shops when user is authenticated
@@ -190,9 +190,9 @@ export default function DeleteShopsPage() {
   };
 
   // Show loading spinner while checking authentication
-  if (isLoading) {
-    return <div className="container">Loading...</div>;
-  }
+  // if (isLoading) {
+  //   return <div className="container">Loading...</div>;
+  // }
 
   // If user is not authenticated, don't render anything (will redirect)
   if (!isAuthenticated) {
