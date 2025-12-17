@@ -15,7 +15,7 @@ export function SendVerification(props: FormLevelProps) {
     const sendVerificationEmail = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const res = await api.post("/api/sendresettoken", Object.fromEntries(formData.entries()),
+        const res = await api.post("/auth/sendresettoken", Object.fromEntries(formData.entries()),
             {
                 auth: "public"
             })
@@ -58,7 +58,7 @@ export function VerifyPasswordToken(props: FormLevelProps) {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
-        const res = await api.post("/api/verifyresettoken", Object.fromEntries(formData.entries()),
+        const res = await api.post("/auth/verifyresettoken", Object.fromEntries(formData.entries()),
             {
                 auth: "public"
             })
@@ -109,7 +109,7 @@ export function ResetPassword(props: FormLevelProps) {
             setFormLevel({...formLevel, error: "Passwords dont match"})
             return
         }
-        const res = await api.post("/api/resetpassword", Object.fromEntries(formData.entries()),
+        const res = await api.post("/auth/resetpassword", Object.fromEntries(formData.entries()),
             {
                 auth: "public"
             })

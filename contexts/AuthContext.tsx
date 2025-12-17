@@ -40,7 +40,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     const logout = (cb?: () => void) => {
-        api.post("/api/logout", {}, {headers: {"Authorization": "Bearer " + accessToken}}).then(res => {
+        api.post("/auth/logout", {}, {headers: {"Authorization": "Bearer " + accessToken}}).then(res => {
             if (!res.ok) {
                 throw new Error(`HTTP error: ${res.status}`);
             }

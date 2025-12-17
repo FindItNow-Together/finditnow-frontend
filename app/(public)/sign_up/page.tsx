@@ -13,7 +13,7 @@ function SignUp() {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
-        const res = await api.post("/api/signup", Object.fromEntries(formData.entries()))
+        const res = await api.post("/auth/signup", Object.fromEntries(formData.entries()))
 
         const data = await res.json()
 

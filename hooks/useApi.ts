@@ -1,120 +1,198 @@
 "use client";
 
-import {useAuth} from "@/contexts/AuthContext"; // adjust import to your path
+import { useAuth } from "@/contexts/AuthContext";
 
 type ApiAccess = "public" | "private";
 
-interface ApiOptions extends Omit<RequestInit, "method"> {
-    auth?: ApiAccess;          // "private" or "public"
-    method?: RequestInit["method"];
+interface ApiOptions extends Omit<RequestInit, "body"> {
+  auth?: ApiAccess;
+  body?: any;
 }
 
 function rewriteUrl(url: string): string {
-    if (!url.length) {
-        throw new Error("URL cannot be empty");
-    }
+  if (!url.length) throw new Error("URL cannot be empty");
 
-    // Rewrite internal API paths to backend
-    if (url.startsWith("/api/")) {
-        return url.replace("/api/", "http://localhost:8080/");
-    }
+  // Switch logic based on the path prefix
+  // Example: /auth/login -> port 8081 | /api/v1/shops -> port 8084
+  const segment = url.split("/")[1];
 
-    return url;
+  switch (segment) {
+    case "auth":
+      return url.replace("/auth/", "http://localhost:8081/");
+    case "shop":
+      // Directs all /api/ calls to the Shop/Product service
+      return url.replace("/shop/", "http://localhost:8084/api/");
+    default:
+      return url;
+  }
 }
 
 async function coreRequest(
-    url: string,
-    options: ApiOptions,
-    accessToken: string | null,
-    setAccessToken: (t: string | null) => void,
-    setAccessRole: (t: string | null)=>void,
-    logout: () => void
-) {
-    const rewritten = rewriteUrl(url);
+  url: string,
+  options: ApiOptions & { method: string },
+  accessToken: string | null,
+  setAccessToken: (t: string | null) => void,
+  setAccessRole: (t: string | null) => void,
+  logout: () => void
+): Promise<Response> {
+  const rewritten = rewriteUrl(url);
 
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(options.headers as any),
-    };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as any),
+  };
 
-    if (options.auth === "private") {
-        if (!accessToken) {
-            throw new Error("Missing access token for private API call");
-        }
+  if (options.auth === "private") {
+    if (!accessToken) throw new Error("Unauthorized: No access token found.");
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
 
-        headers["Authorization"] = "Bearer " + accessToken;
+  const response = await fetch(rewritten, {
+    ...options,
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+    credentials: "include",
+  });
+
+  // 401 Handling & Token Refresh
+  if (response.status === 401) {
+    const errorBody = await response
+      .clone()
+      .json()
+      .catch(() => null);
+
+    if (
+      rewritten.endsWith("logout") ||
+      rewritten.endsWith("refresh") ||
+      errorBody?.error !== "token_expired"
+    ) {
+      logout();
+      return response;
     }
 
-    const response = await fetch(rewritten, {
-        ...options,
-        headers,
-        credentials: "include",
-    });
-
-    if (response.status !== 401) {
-        return response;
-    }
-
-    // Attempt reading error
-    const errorBody = await response.clone().json().catch(() => null);
-
-    if (rewritten.endsWith("logout") || rewritten.endsWith("refresh") || !errorBody || errorBody.error !== "token_expired") {
-        return response;
-    }
-
-    // Try refresh token
-    const refreshRes = await fetch("/api/refresh", {
-        method: "POST",
-        credentials: "include"
+    // Refresh Attempt (pointing to Auth Service)
+    const refreshRes = await fetch("http://localhost:8081/refresh", {
+      method: "POST",
+      credentials: "include",
     });
 
     if (!refreshRes.ok) {
-        logout();
-        return response;
+      logout();
+      return response;
     }
 
     const refreshData = await refreshRes.json();
     const newAccessToken = refreshData.accessToken;
-    const accessRole = refreshData.profile;
 
     if (!newAccessToken) {
-        logout();
-        return response;
+      logout();
+      return response;
     }
 
-    // Update memory token
     setAccessToken(newAccessToken);
-    setAccessRole(accessRole);
-
-    // Retry original with new token
-    const retryHeaders = {
-        ...headers,
-        Authorization: "Bearer " + newAccessToken,
-    };
+    setAccessRole(refreshData.profile);
 
     return fetch(rewritten, {
-        ...options,
-        headers: retryHeaders,
+      ...options,
+      headers: { ...headers, Authorization: `Bearer ${newAccessToken}` },
+      body: options.body ? JSON.stringify(options.body) : undefined,
     });
+  }
+
+  return response;
 }
 
 export default function useApi() {
-    const {accessToken, setAccessToken, logout, setAccessRole} = useAuth();
+  const { accessToken, setAccessToken, logout, setAccessRole } = useAuth();
 
-    const get = (url: string, options: ApiOptions = {}) =>
-        coreRequest(url, {...options, method: "GET"}, accessToken, setAccessToken,setAccessRole, logout);
+  // --- GENERIC METHODS (The ones you were looking for) ---
 
-    const post = (url: string, body: any, options: ApiOptions = {}) =>
-        coreRequest(url, {
-                ...options,
-                method: "POST",
-                body: JSON.stringify(body),
-            },
-            accessToken,
-            setAccessToken,
-            setAccessRole,
-            logout
-        );
+  const get = (url: string, options: ApiOptions = {}) =>
+    coreRequest(
+      url,
+      { ...options, method: "GET" },
+      accessToken,
+      setAccessToken,
+      setAccessRole,
+      logout
+    );
 
-    return {get, post};
+  const post = (url: string, body?: any, options: ApiOptions = {}) =>
+    coreRequest(
+      url,
+      { ...options, method: "POST", body },
+      accessToken,
+      setAccessToken,
+      setAccessRole,
+      logout
+    );
+
+  const put = (url: string, body?: any, options: ApiOptions = {}) =>
+    coreRequest(
+      url,
+      { ...options, method: "PUT", body },
+      accessToken,
+      setAccessToken,
+      setAccessRole,
+      logout
+    );
+
+  const del = (url: string, body?: any, options: ApiOptions = {}) =>
+    coreRequest(
+      url,
+      { ...options, method: "DELETE", body },
+      accessToken,
+      setAccessToken,
+      setAccessRole,
+      logout
+    );
+
+  // Helper for JSON parsing to keep the domain APIs clean
+  const requestJson = async <T>(
+    method: string,
+    url: string,
+    body?: any,
+    auth: ApiAccess = "private"
+  ): Promise<T> => {
+    const res = await coreRequest(
+      url,
+      { method, body, auth },
+      accessToken,
+      setAccessToken,
+      setAccessRole,
+      logout
+    );
+    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+    return res.json();
+  };
+
+  return {
+    // Expose raw methods
+    get,
+    post,
+    put,
+    del,
+
+    // Expose Domain Logic (from api.ts)
+    shopApi: {
+      register: (data: any) => requestJson("POST", "/shop/v1/shops", data),
+      getMyShops: () => requestJson("GET", "/shop/v1/shops/mine"),
+      getAllShops: () => requestJson("GET", "/shop/v1/shops"),
+      getShop: (id: number) => requestJson("GET", `/shop/v1/shops/${id}`),
+      delete: (id: number) => requestJson("DELETE", `/shop/v1/shops/${id}`),
+      deleteMultiple: (ids: number[]) =>
+        requestJson("DELETE", "/shop/v1/shops/bulk", ids),
+    },
+    productApi: {
+      add: (shopId: number, data: any) =>
+        requestJson("POST", `/shop/v1/shops/${shopId}/products`, data),
+      getByShop: (shopId: number) =>
+        requestJson("GET", `/shop/v1/shops/${shopId}/products`),
+      update: (id: number, data: any) =>
+        requestJson("PUT", `/shop/v1/products/${id}`, data),
+      delete: (id: number) => requestJson("DELETE", `/shop/v1/products/${id}`),
+      deleteMultiple: (ids: number[]) =>
+        requestJson("DELETE", "/shop/v1/products/bulk", ids),
+    },
+  };
 }

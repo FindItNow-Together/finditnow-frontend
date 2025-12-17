@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { shopApi } from '@/lib/api';
+import { useAuth } from "@/contexts/AuthContext";
+import useApi from '@/hooks/useApi';
 import { Shop } from '@/types/shop';
-import {useAuth} from "@/contexts/AuthContext";
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: 'No Delivery Service',
@@ -38,6 +38,7 @@ const formatCoordinate = (value?: number) => {
 export default function DeleteShopsPage() {
   // State to store all shops owned by the user
   const [shops, setShops] = useState<Shop[]>([]);
+  const { shopApi } = useApi();
   
   // State to track which shops are selected for deletion (using Set for efficient lookups)
   const [selectedShopIds, setSelectedShopIds] = useState<Set<number>>(new Set());

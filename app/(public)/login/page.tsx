@@ -15,7 +15,7 @@ function Login() {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
 
-        api.post("/api/signin", Object.fromEntries(data.entries()), {auth: "public"})
+        api.post("/auth/signin", Object.fromEntries(data.entries()), {auth: "public"})
             .then(res => {
                 if (!res.ok) {
                     throw new Error(`HTTP error: ${res.status}`);

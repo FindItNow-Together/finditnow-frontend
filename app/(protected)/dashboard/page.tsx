@@ -1,18 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { shopApi, productApi } from '@/lib/api';
-import { Shop } from '@/types/shop';
-import { Product } from '@/types/product';
-import ShopCard from '@/components/ShopCard';
-import {useAuth} from "@/contexts/AuthContext";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Shop } from "@/types/shop";
+import { Product } from "@/types/product";
+import ShopCard from "@/components/ShopCard";
+import { useAuth } from "@/contexts/AuthContext";
+import useApi from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
+  const [shopsWithProducts, setShopsWithProducts] = useState<
+    Map<number, Product[]>
+  >(new Map());
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { productApi, shopApi } = useApi();
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
@@ -27,7 +30,7 @@ export default function DashboardPage() {
     try {
       const response = await shopApi.getMyShops();
       setShops(response.data);
-      
+
       // Load products for each shop
       const productsMap = new Map<number, Product[]>();
       await Promise.all(
@@ -41,19 +44,19 @@ export default function DashboardPage() {
           }
         })
       );
-      
+
       setShopsWithProducts(productsMap);
     } catch (err: any) {
-      setError('Failed to load shops');
+      setError("Failed to load shops");
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    router.push('/login');
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    router.push("/login");
   };
 
   // Filter shops based on search query
@@ -65,7 +68,7 @@ export default function DashboardPage() {
     const query = searchQuery.toLowerCase();
     return shops.filter((shop) => {
       // Search in shop name, address, and phone
-      const matchesShop = 
+      const matchesShop =
         shop.name.toLowerCase().includes(query) ||
         shop.address.toLowerCase().includes(query) ||
         shop.phone.toLowerCase().includes(query);
@@ -100,8 +103,8 @@ export default function DashboardPage() {
           <p>You need to register a shop first.</p>
           <button
             className="btn btn-primary"
-            onClick={() => router.push('/register-shop')}
-            style={{ marginTop: '16px' }}
+            onClick={() => router.push("/register-shop")}
+            style={{ marginTop: "16px" }}
           >
             Register Shop
           </button>
@@ -113,85 +116,98 @@ export default function DashboardPage() {
   return (
     <div className="container">
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
+          flexWrap: "wrap",
+          gap: "16px",
+        }}
+      >
         <h1 style={{ margin: 0 }}>My Shops</h1>
         <button className="btn btn-secondary" onClick={handleLogout}>
           Logout
         </button>
       </div>
 
-      {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
+      {error && (
+        <div className="error" style={{ marginBottom: "16px" }}>
+          {error}
+        </div>
+      )}
 
       {/* Action Buttons */}
-      <div style={{ 
-        marginBottom: '24px',
-        display: 'flex',
-        gap: '12px',
-        flexWrap: 'wrap'
-      }}>
+      <div
+        style={{
+          marginBottom: "24px",
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
         <button
           className="btn btn-primary"
-          onClick={() => router.push('/register-shop')}
+          onClick={() => router.push("/register-shop")}
         >
           + Add New Shop
         </button>
         <button
           className="btn btn-danger"
-          onClick={() => router.push('/delete-shops')}
+          onClick={() => router.push("/delete-shops")}
         >
           Remove Shop
         </button>
       </div>
 
       {/* Search Bar */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ position: 'relative' }}>
+      <div style={{ marginBottom: "24px" }}>
+        <div style={{ position: "relative" }}>
           <input
             type="text"
             placeholder="Search shops by name, address, phone, or products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              width: '100%',
-              padding: '12px 40px 12px 16px',
-              fontSize: '16px',
-              border: '2px solid #ddd',
-              borderRadius: '8px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
+              width: "100%",
+              padding: "12px 40px 12px 16px",
+              fontSize: "16px",
+              border: "2px solid #ddd",
+              borderRadius: "8px",
+              outline: "none",
+              transition: "border-color 0.2s",
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = '#007bff';
+              e.currentTarget.style.borderColor = "#007bff";
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = '#ddd';
+              e.currentTarget.style.borderColor = "#ddd";
             }}
           />
-          <span style={{
-            position: 'absolute',
-            right: '16px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize: '20px',
-            color: '#999'
-          }}>
+          <span
+            style={{
+              position: "absolute",
+              right: "16px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: "20px",
+              color: "#999",
+            }}
+          >
             🔍
           </span>
         </div>
         {searchQuery && (
-          <p style={{ 
-            marginTop: '8px', 
-            fontSize: '14px', 
-            color: '#666' 
-          }}>
-            Found {filteredShops.length} {filteredShops.length === 1 ? 'shop' : 'shops'}
+          <p
+            style={{
+              marginTop: "8px",
+              fontSize: "14px",
+              color: "#666",
+            }}
+          >
+            Found {filteredShops.length}{" "}
+            {filteredShops.length === 1 ? "shop" : "shops"}
           </p>
         )}
       </div>
@@ -199,21 +215,23 @@ export default function DashboardPage() {
       {/* Shop Cards Grid */}
       {filteredShops.length === 0 ? (
         <div className="card">
-          <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
+          <p style={{ textAlign: "center", color: "#666", margin: 0 }}>
             No shops found matching "{searchQuery}"
           </p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '20px',
-          marginBottom: '40px'
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: "20px",
+            marginBottom: "40px",
+          }}
+        >
           {filteredShops.map((shop) => {
             const products = shopsWithProducts.get(shop.id) || [];
-            const topProducts = products.map(p => p.name);
-            
+            const topProducts = products.map((p) => p.name);
+
             return (
               <ShopCard
                 key={shop.id}
