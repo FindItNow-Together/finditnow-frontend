@@ -18,10 +18,10 @@ function rewriteUrl(url: string): string {
 
   switch (segment) {
     case "auth":
-      return url.replace("/auth/", process.env.AUTH_APP_URL || "http://localhost:8080/");
+      return url.replace("/auth/", process.env.NEXT_PUBLIC_AUTH_APP_URL || "http://localhost:8080/");
     case "shop":
       // Directs all /api/ calls to the Shop/Product service
-      return url.replace("/shop/", process.env.SHOP_APP_URL ||"http://localhost:8083/api/");
+      return url.replace("/shop/", process.env.NEXT_PUBLIC_SHOP_APP_URL ||"http://localhost:8083/api/");
     default:
       return url;
   }
