@@ -26,15 +26,15 @@ export default function AdminDashboardPage() {
 
   const loadAllShops = async () => {
     try {
-      const response = await shopApi.getAllShops();
-      setShops(response.data);
+      const shops = await shopApi.getAllShops() as Shop[];
+      setShops(shops);
 
       const productsMap = new Map<number, Product[]>();
       await Promise.all(
-        response.data.map(async (shop) => {
+        shops.map(async (shop) => {
           try {
-            const productsResponse = await productApi.getByShop(shop.id);
-            productsMap.set(shop.id, productsResponse.data);
+            const products = await productApi.getByShop(shop.id) as Product[];
+            productsMap.set(shop.id, products);
           } catch {
             productsMap.set(shop.id, []);
           }

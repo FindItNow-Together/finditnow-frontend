@@ -1,8 +1,8 @@
 export const ROLE_ROUTE_MAP: Record<string, string[]> = {
-    "/admin": ["ADMIN"],
+    "/admin/dashboard": ["ADMIN"],
     "/dashboard": ["SHOP"],
     "/register-shop": ["ADMIN", "SHOP"],
     "/shop": ["SHOP", "ADMIN"],
-    "/orders": ["CUSTOMER", "SHOP", "ADMIN"],
+    "/home": ["CUSTOMER", "SHOP", "ADMIN"],
     "/delivery": ["DELIVERY"],
 };

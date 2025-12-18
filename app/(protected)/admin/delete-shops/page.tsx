@@ -43,8 +43,8 @@ export default function AdminDeleteShopsPage() {
 
   const loadShops = async () => {
     try {
-      const response = await shopApi.getAllShops();
-      setShops(response.data);
+      const shops = await shopApi.getAllShops() as Shop[];
+      setShops(shops);
       setError(null);
     } catch (err: any) {
       setError("Failed to load shops");

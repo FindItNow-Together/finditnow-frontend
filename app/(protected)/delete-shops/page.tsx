@@ -81,10 +81,10 @@ export default function DeleteShopsPage() {
   const loadShops = async () => {
     try {
       // Call the API to get all shops owned by the current user
-      const response = await shopApi.getMyShops();
+      const shops = await shopApi.getMyShops() as Shop[];
       
       // Update the shops state with the fetched data
-      setShops(response.data);
+      setShops(shops);
       
       // Clear any previous errors
       setError(null);
