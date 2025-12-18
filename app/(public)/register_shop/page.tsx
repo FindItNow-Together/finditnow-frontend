@@ -1,33 +1,37 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { shopApi } from '@/lib/api';
-import { DeliveryOption } from '@/types/shop';
-import {useAuth} from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { DeliveryOption } from "@/types/shop";
+import { useAuth } from "@/contexts/AuthContext";
+import useApi from "@/hooks/useApi";
 
 const deliveryOptions = [
-  { value: 'NO_DELIVERY', label: 'No Delivery Service' },
-  { value: 'IN_HOUSE_DRIVER', label: 'In-house Delivery Driver' },
-  { value: 'THIRD_PARTY_PARTNER', label: '3rd Party Delivery Partner' },
+  { value: "NO_DELIVERY", label: "No Delivery Service" },
+  { value: "IN_HOUSE_DRIVER", label: "In-house Delivery Driver" },
+  { value: "THIRD_PARTY_PARTNER", label: "3rd Party Delivery Partner" },
 ];
 
 export default function RegisterShopPage() {
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    openHours: '',
+    name: "",
+    address: "",
+    phone: "",
+    openHours: "",
     deliveryOption: deliveryOptions[0].value,
-    ownerId: '',
+    ownerId: "",
   });
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [locationStatus, setLocationStatus] = useState('Detecting current location...');
+  const [locationStatus, setLocationStatus] = useState(
+    "Detecting current location..."
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { shopApi } = useApi();
 
   /**
    * Helper to fetch the user's current geolocation using the browser API.
@@ -35,21 +39,23 @@ export default function RegisterShopPage() {
    */
   const fetchCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setLocationStatus('Geolocation is not supported by this browser.');
+      setLocationStatus("Geolocation is not supported by this browser.");
       return;
     }
 
-    setLocationStatus('Fetching current location...');
+    setLocationStatus("Fetching current location...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLatitude(position.coords.latitude);
         setLongitude(position.coords.longitude);
-        setLocationStatus('Location captured from your device.');
+        setLocationStatus("Location captured from your device.");
       },
       (geoError) => {
-        console.error('Geolocation error:', geoError);
-        setLocationStatus('Unable to capture location. Please allow location access and try again.');
+        console.error("Geolocation error:", geoError);
+        setLocationStatus(
+          "Unable to capture location. Please allow location access and try again."
+        );
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -67,7 +73,8 @@ export default function RegisterShopPage() {
     return null;
   }
 
-  const isAdmin = typeof window !== 'undefined' && localStorage.getItem('role') === 'ADMIN';
+  const isAdmin =
+    typeof window !== "undefined" && localStorage.getItem("role") === "ADMIN";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +82,9 @@ export default function RegisterShopPage() {
     setLoading(true);
 
     if (latitude === null || longitude === null) {
-      setError('Unable to detect your current location. Please allow location access and try again.');
+      setError(
+        "Unable to detect your current location. Please allow location access and try again."
+      );
       setLoading(false);
       return;
     }
@@ -99,18 +108,20 @@ export default function RegisterShopPage() {
 
       // Redirect based on role
       if (isAdmin) {
-        router.push('/admin/dashboard');
+        router.push("/admin/dashboard");
       } else {
-        router.push('/dashboard');
+        router.push("/dashboard");
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to register shop');
+      setError(err.response?.data?.error || "Failed to register shop");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -119,10 +130,14 @@ export default function RegisterShopPage() {
 
   return (
     <div className="container">
-      <div className="card" style={{ maxWidth: '600px', margin: '40px auto' }}>
-        <h1 style={{ marginBottom: '24px' }}>Register Your Shop</h1>
+      <div className="card" style={{ maxWidth: "600px", margin: "40px auto" }}>
+        <h1 style={{ marginBottom: "24px" }}>Register Your Shop</h1>
 
-        {error && <div className="error" style={{ marginBottom: '16px' }}>{error}</div>}
+        {error && (
+          <div className="error" style={{ marginBottom: "16px" }}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -189,13 +204,21 @@ export default function RegisterShopPage() {
                 </option>
               ))}
             </select>
-            <small style={{ color: '#666' }}>
+            <small style={{ color: "#666" }}>
               Choose how customers can receive deliveries from your shop.
             </small>
           </div>
 
           {isAdmin && (
-            <div className="form-group" style={{ backgroundColor: '#fff3cd', padding: '12px', borderRadius: '4px', border: '1px solid #ffc107' }}>
+            <div
+              className="form-group"
+              style={{
+                backgroundColor: "#fff3cd",
+                padding: "12px",
+                borderRadius: "4px",
+                border: "1px solid #ffc107",
+              }}
+            >
               <label htmlFor="ownerId">Owner ID (Admin Only)</label>
               <input
                 type="number"
@@ -205,8 +228,9 @@ export default function RegisterShopPage() {
                 onChange={handleChange}
                 placeholder="Enter User ID to assign shop to"
               />
-              <small style={{ color: '#856404' }}>
-                Leave blank to assign to yourself. Enter a User ID to assign this shop to another user.
+              <small style={{ color: "#856404" }}>
+                Leave blank to assign to yourself. Enter a User ID to assign
+                this shop to another user.
               </small>
             </div>
           )}
@@ -215,16 +239,24 @@ export default function RegisterShopPage() {
             <label>Current Location (captured automatically)</label>
             <div
               style={{
-                padding: '12px',
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                marginBottom: '8px',
+                padding: "12px",
+                backgroundColor: "#f8f9fa",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                marginBottom: "8px",
               }}
             >
-              <p style={{ margin: 0, fontWeight: 600 }}>Latitude: {latitude ?? 'Detecting...'}</p>
-              <p style={{ margin: 0, fontWeight: 600 }}>Longitude: {longitude ?? 'Detecting...'}</p>
-              <p style={{ margin: '8px 0 0 0', color: '#666', fontSize: '14px' }}>{locationStatus}</p>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Latitude: {latitude ?? "Detecting..."}
+              </p>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Longitude: {longitude ?? "Detecting..."}
+              </p>
+              <p
+                style={{ margin: "8px 0 0 0", color: "#666", fontSize: "14px" }}
+              >
+                {locationStatus}
+              </p>
             </div>
             <button
               type="button"
@@ -239,13 +271,12 @@ export default function RegisterShopPage() {
             type="submit"
             className="btn btn-primary"
             disabled={loading}
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
           >
-            {loading ? 'Registering...' : 'Register Shop'}
+            {loading ? "Registering..." : "Register Shop"}
           </button>
         </form>
       </div>
     </div>
   );
 }
-

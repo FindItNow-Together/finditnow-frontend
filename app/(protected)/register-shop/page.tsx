@@ -5,17 +5,31 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Dynamically import Map components to avoid SSR issues with Leaflet
-const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
-const useMapEvents = dynamic(() => import("react-leaflet").then((mod) => mod.useMapEvents), { ssr: false });
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const useMapEvents = dynamic(
+  () => import("react-leaflet").then((mod) => mod.useMapEvents),
+  { ssr: false }
+);
 
 export default function RegisterShopPage() {
   const router = useRouter();
   const { shopApi } = useApi();
-  
+  const { accessRole } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,7 +46,12 @@ export default function RegisterShopPage() {
   // Automatically fetch initial location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      (pos) => setFormData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude })),
+      (pos) =>
+        setFormData((prev) => ({
+          ...prev,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        })),
       (err) => console.error("Location access denied", err)
     );
   }, []);
@@ -41,10 +60,16 @@ export default function RegisterShopPage() {
   function LocationMarker() {
     useMapEvents({
       click(e) {
-        setFormData(prev => ({ ...prev, latitude: e.latlng.lat, longitude: e.latlng.lng }));
+        setFormData((prev) => ({
+          ...prev,
+          latitude: e.latlng.lat,
+          longitude: e.latlng.lng,
+        }));
       },
     });
-    return formData.latitude ? <Marker position={[formData.latitude, formData.longitude]} /> : null;
+    return formData.latitude ? (
+      <Marker position={[formData.latitude, formData.longitude]} />
+    ) : null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,9 +77,12 @@ export default function RegisterShopPage() {
     setLoading(true);
     try {
       await shopApi.register(formData);
-      router.push("/admin/dashboard");
+      if (accessRole == "ADMIN") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
-        console.log("EEORROROR_", err)
       alert("Registration failed");
     } finally {
       setLoading(false);
@@ -71,27 +99,60 @@ export default function RegisterShopPage() {
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           {/* Basic Info */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Shop Name</label>
-            <input required className="w-full px-4 py-2 border rounded-lg mt-1" type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            <label className="block text-sm font-medium text-gray-700">
+              Shop Name
+            </label>
+            <input
+              required
+              className="w-full px-4 py-2 border rounded-lg mt-1"
+              type="text"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Phone</label>
-              <input required className="w-full px-4 py-2 border rounded-lg mt-1" type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+              <label className="block text-sm font-medium text-gray-700">
+                Phone
+              </label>
+              <input
+                required
+                className="w-full px-4 py-2 border rounded-lg mt-1"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Open Hours</label>
-              <input required className="w-full px-4 py-2 border rounded-lg mt-1" type="text" placeholder="9 AM - 6 PM" value={formData.openHours} onChange={e => setFormData({...formData, openHours: e.target.value})} />
+              <label className="block text-sm font-medium text-gray-700">
+                Open Hours
+              </label>
+              <input
+                required
+                className="w-full px-4 py-2 border rounded-lg mt-1"
+                type="text"
+                placeholder="9 AM - 6 PM"
+                value={formData.openHours}
+                onChange={(e) =>
+                  setFormData({ ...formData, openHours: e.target.value })
+                }
+              />
             </div>
           </div>
 
           {/* Location Picker Section */}
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-blue-800">Location Coordinates</span>
-              <button 
-                type="button" 
+              <span className="text-sm font-semibold text-blue-800">
+                Location Coordinates
+              </span>
+              <button
+                type="button"
                 onClick={() => setShowMapModal(true)}
                 className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
               >
@@ -106,13 +167,31 @@ export default function RegisterShopPage() {
 
           {/* Other Fields */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Address</label>
-            <textarea required className="w-full px-4 py-2 border rounded-lg mt-1" rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+            <label className="block text-sm font-medium text-gray-700">
+              Address
+            </label>
+            <textarea
+              required
+              className="w-full px-4 py-2 border rounded-lg mt-1"
+              rows={2}
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Delivery Option</label>
-            <select className="w-full px-4 py-2 border rounded-lg mt-1" value={formData.deliveryOption} onChange={e => setFormData({...formData, deliveryOption: e.target.value})}>
+            <label className="block text-sm font-medium text-gray-700">
+              Delivery Option
+            </label>
+            <select
+              className="w-full px-4 py-2 border rounded-lg mt-1"
+              value={formData.deliveryOption}
+              onChange={(e) =>
+                setFormData({ ...formData, deliveryOption: e.target.value })
+              }
+            >
               <option value="PICKUP">Pickup Only</option>
               <option value="DELIVERY">Delivery Only</option>
               <option value="BOTH">Both</option>
@@ -120,8 +199,18 @@ export default function RegisterShopPage() {
           </div>
 
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={() => router.back()} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex-1 px-4 py-2 border rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            >
               {loading ? "Registering..." : "Register Shop"}
             </button>
           </div>
@@ -134,14 +223,19 @@ export default function RegisterShopPage() {
           <div className="bg-white rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-bold">Click on the map to set location</h3>
-              <button onClick={() => setShowMapModal(false)} className="text-gray-500 hover:text-black">✕</button>
+              <button
+                onClick={() => setShowMapModal(false)}
+                className="text-gray-500 hover:text-black"
+              >
+                ✕
+              </button>
             </div>
-            
+
             <div className="h-[400px] w-full">
-              <MapContainer 
-                center={[formData.latitude, formData.longitude]} 
-                zoom={13} 
-                style={{ height: '100%', width: '100%' }}
+              <MapContainer
+                center={[formData.latitude, formData.longitude]}
+                zoom={13}
+                style={{ height: "100%", width: "100%" }}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <LocationMarker />
@@ -149,7 +243,7 @@ export default function RegisterShopPage() {
             </div>
 
             <div className="p-4 bg-gray-50 flex justify-end">
-              <button 
+              <button
                 onClick={() => setShowMapModal(false)}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium"
               >

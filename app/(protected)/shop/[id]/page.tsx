@@ -55,7 +55,7 @@ export default function ShopDetailsPage() {
 
     try {
       const response = await shopApi.getShop(shopId);
-      setShop(response.data);
+      setShop(response as Shop);
     } catch (err: any) {
       setError("Failed to load shop details");
     } finally {
@@ -67,8 +67,8 @@ export default function ShopDetailsPage() {
     if (!shopId) return;
 
     try {
-      const response = await productApi.getByShop(shopId);
-      setProducts(response.data);
+      const prods = await productApi.getByShop(shopId) as Product[];
+      setProducts(prods);
       setSelectedProducts(new Set()); // Clear selection on reload
     } catch (err: any) {
       setError("Failed to load products");
