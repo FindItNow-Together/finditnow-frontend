@@ -1,29 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import { LocationMap } from "@/app/_components/Map";
+import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
-import { useAuth } from "@/contexts/AuthContext";
-
-// Dynamically import Map components to avoid SSR issues with Leaflet
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-const useMapEvents = dynamic(
-  () => import("react-leaflet").then((mod) => mod.useMapEvents),
-  { ssr: false }
-);
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function RegisterShopPage() {
   const router = useRouter();
@@ -56,21 +38,9 @@ export default function RegisterShopPage() {
     );
   }, []);
 
-  // Helper component to handle clicks on the map
-  function LocationMarker() {
-    useMapEvents({
-      click(e) {
-        setFormData((prev) => ({
-          ...prev,
-          latitude: e.latlng.lat,
-          longitude: e.latlng.lng,
-        }));
-      },
-    });
-    return formData.latitude ? (
-      <Marker position={[formData.latitude, formData.longitude]} />
-    ) : null;
-  }
+  const handleMapSelection = (lat: number, lng: number) => {
+    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,9 +187,8 @@ export default function RegisterShopPage() {
         </form>
       </div>
 
-      {/* --- MAP MODAL --- */}
       {showMapModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-bold">Click on the map to set location</h3>
@@ -231,16 +200,11 @@ export default function RegisterShopPage() {
               </button>
             </div>
 
-            <div className="h-[400px] w-full">
-              <MapContainer
-                center={[formData.latitude, formData.longitude]}
-                zoom={13}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <LocationMarker />
-              </MapContainer>
-            </div>
+            <LocationMap
+              height="400px"
+              userLocation={{ lat: formData.latitude, lng: formData.longitude }}
+              onMapClick={handleMapSelection}
+            />
 
             <div className="p-4 bg-gray-50 flex justify-end">
               <button

@@ -24,10 +24,12 @@ export default function ProductForm({
     stock: 0,
     category: "",
   });
+  
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { productApi } = useApi();
 
+  // Populate form when in Edit mode
   useEffect(() => {
     if (product) {
       setFormData({
@@ -53,7 +55,7 @@ export default function ProductForm({
       }
       onSave();
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to save product");
+      setError(err.response?.data?.message || "Failed to save product. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,74 +65,75 @@ export default function ProductForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]:
         name === "price"
-          ? parseFloat(value) || 0
+          ? value === "" ? 0 : parseFloat(value)
           : name === "stock"
-          ? parseInt(value) || 0
+          ? value === "" ? 0 : parseInt(value)
           : value,
-    });
+    }));
   };
 
   return (
-    <div
-      style={{
-        marginBottom: "24px",
-        padding: "20px",
-        backgroundColor: "#f8f9fa",
-        borderRadius: "8px",
-      }}
-    >
-      <h3 style={{ marginBottom: "16px" }}>
-        {product ? "Edit Product" : "Add New Product"}
+    <div className="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-800 mb-4">
+        {product ? "📝 Edit Product" : "✨ Add New Product"}
       </h3>
 
       {error && (
-        <div className="error" style={{ marginBottom: "16px" }}>
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="name">Product Name *</label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Product Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
+            Product Name *
+          </label>
           <input
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
             type="text"
             id="name"
             name="name"
+            placeholder="e.g. Fresh Sourdough Bread"
             value={formData.name}
             onChange={handleChange}
             required
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="description">
+            Description
+          </label>
           <textarea
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
             id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
             rows={3}
+            placeholder="Describe your product..."
           />
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "16px",
-          }}
-        >
-          <div className="form-group">
-            <label htmlFor="price">Price *</label>
+        {/* Price and Stock Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="price">
+              Price ($) *
+            </label>
             <input
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
               type="number"
               id="price"
               name="price"
-              value={formData.price}
+              value={formData.price || ""}
               onChange={handleChange}
               step="0.01"
               min="0.01"
@@ -138,13 +141,16 @@ export default function ProductForm({
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="stock">Stock *</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="stock">
+              Available Stock *
+            </label>
             <input
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
               type="number"
               id="stock"
               name="stock"
-              value={formData.stock}
+              value={formData.stock || ""}
               onChange={handleChange}
               min="0"
               required
@@ -152,24 +158,34 @@ export default function ProductForm({
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="category">Category</label>
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="category">
+            Category
+          </label>
           <input
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
             type="text"
             id="category"
             name="category"
+            placeholder="e.g. Bakery, Dairy, Organic"
             value={formData.category}
             onChange={handleChange}
           />
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Saving..." : product ? "Update Product" : "Add Product"}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? "Processing..." : product ? "Update Product" : "Add Product"}
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-2 rounded-lg transition"
             onClick={onCancel}
           >
             Cancel

@@ -1,35 +1,79 @@
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
-import {MapLocation} from "@/types/mapLocation";
+// @/components/LocationMap.tsx
+import { 
+  MapContainer, 
+  TileLayer, 
+  Marker, 
+  Popup, 
+  CircleMarker,
+  useMapEvents 
+} from "react-leaflet";
+import { MapLocation } from "@/types/mapLocation";
+import L from 'leaflet';
+
+// Fix for default marker icons (for the generic locations)
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import shadowIcon from 'leaflet/dist/images/marker-shadow.png';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon.src || markerIcon,
+  iconRetinaUrl: markerIcon2x.src || markerIcon2x,
+  shadowUrl: shadowIcon.src || shadowIcon,
+});
+
+// Dynamically import Map components to avoid SSR issues with Leaflet
+// const MapContainer = dynamic(
+//   () => import("react-leaflet").then((mod) => mod.MapContainer),
+//   { ssr: false }
+// );
+// const TileLayer = dynamic(
+//   () => import("react-leaflet").then((mod) => mod.TileLayer),
+//   { ssr: false }
+// );
+// const Marker = dynamic(
+//   () => import("react-leaflet").then((mod) => mod.Marker),
+//   { ssr: false }
+// );
+// const useMapEvents = dynamic(
+//   () => import("react-leaflet").then((mod) => mod.useMapEvents),
+//   { ssr: false }
+// );
 
 type LocationMapProps<T> = {
-    locations: MapLocation<T>[];
+    locations?: MapLocation<T>[];
     userLocation: { lat: number; lng: number } | null;
     zoom?: number;
     height?: string;
-
-    renderPopup: (location: MapLocation<T>) => React.ReactNode;
+    renderPopup?: (location: MapLocation<T>) => React.ReactNode;
     onMarkerClick?: (location: MapLocation<T>) => void;
+    onMapClick?: (lat: number, lng: number) => void;
 };
 
+function MapEvents({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
+    useMapEvents({
+        click(e) {
+            onMapClick?.(e.latlng.lat, e.latlng.lng);
+        },
+    });
+    return null;
+}
+
 export function LocationMap<T>({
-                                   locations,
-                                   userLocation,
-                                   zoom = 13,
-                                   height = "18rem",
-                                   renderPopup,
-                                   onMarkerClick,
-                               }: LocationMapProps<T>) {
-    const center = userLocation
-        ? [userLocation.lat, userLocation.lng]
-        : locations.length
-            ? [locations[0].lat, locations[0].lng]
-            : [20.5937, 78.9629]; // fallback
+    locations = [],
+    userLocation,
+    zoom = 13,
+    height = "18rem",
+    renderPopup,
+    onMarkerClick,
+    onMapClick
+}: LocationMapProps<T>) {
+    const center = userLocation 
+        ? [userLocation.lat, userLocation.lng] 
+        : [20.5937, 78.9629];
 
     return (
-        <div
-            className="bg-gray-100 rounded overflow-hidden"
-            style={{ height }}
-        >
+        <div className="bg-gray-100 rounded overflow-hidden" style={{ height }}>
             <MapContainer
                 center={center as [number, number]}
                 zoom={zoom}
@@ -40,32 +84,33 @@ export function LocationMap<T>({
                     attribution="&copy; OpenStreetMap contributors"
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                
+                <MapEvents onMapClick={onMapClick} />
 
-                {/* User marker */}
+                {/* Styled CircleMarker for the selected/user position */}
                 {userLocation && (
                     <CircleMarker
                         center={[userLocation.lat, userLocation.lng]}
-                        radius={8}
+                        radius={10}
                         pathOptions={{
                             color: "#2563eb",
                             fillColor: "#3b82f6",
-                            fillOpacity: 0.85,
+                            fillOpacity: 0.8,
+                            weight: 2
                         }}
                     >
-                        <Popup>You are here</Popup>
+                        <Popup>Selected Shop Location</Popup>
                     </CircleMarker>
                 )}
 
-                {/* Generic markers */}
+                {/* Generic markers for existing shops/locations */}
                 {locations.map((loc) => (
                     <Marker
                         key={loc.id}
                         position={[loc.lat, loc.lng]}
-                        eventHandlers={{
-                            click: () => onMarkerClick?.(loc),
-                        }}
+                        eventHandlers={{ click: () => onMarkerClick?.(loc) }}
                     >
-                        <Popup>{renderPopup(loc)}</Popup>
+                        {renderPopup && <Popup>{renderPopup(loc)}</Popup>}
                     </Marker>
                 ))}
             </MapContainer>
