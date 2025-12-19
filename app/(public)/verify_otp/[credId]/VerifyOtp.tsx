@@ -62,7 +62,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
             default:
                 route = "/home";
         }
-        router.push(route)
+        router.replace(route)
     };
 
     const resendVerificationEmail = async () => {

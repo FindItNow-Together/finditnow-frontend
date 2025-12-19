@@ -1,31 +1,137 @@
+// components/Navbar.tsx
 'use client'
 import {ShoppingCart} from "lucide-react";
-import {useRouter} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@/contexts/AuthContext";
+import {useCart} from "@/contexts/CartContext";
 
-export default function Navbar(props: { itemCount: number }) {
+export default function Navbar() {
     const router = useRouter();
-    const {logout} = useAuth();
-    const {itemCount} = props;
+    const {logout, isAuthenticated} = useAuth();
+    const pathname = usePathname();
+    const {itemCount} = useCart();
 
-    const handleLogout = () => {
-        logout(() => router.replace("/"))
+    const handleAuthAction = () => {
+        if(isAuthenticated){
+            logout(() => router.replace("/"))
+        }else{
+            router.push("/login")
+        }
     }
-    return <nav className="text-2xl flex items-center text-center p-2 justify-between bg-gray-300
-        rounded-b-md sticky top-0 shadow-md">
-        <div className="hover:animate-pulse hover:cursor-default font-bold">
-            <span className="text-blue-500">Findit</span>
-            <span className="text-green-500">Now</span>
-        </div>
 
-        <button onClick={() => {
-            router.push("/cart")
-        }} className="flex items-center gap-2">
-            <ShoppingCart/>
-            {itemCount != 0 ? <span>{itemCount}</span> : null}
-        </button>
-        <button className="bg-red-500 text-white rounded-sm px-2 py-1 hover:bg-red-600 hover:shadow"
-                onClick={handleLogout}>Logout
-        </button>
+    const authRoutes = ["/login", "/sign_up", "/register", "/verify_otp", "/forbidden", "/forgot_password"];
+
+    if (authRoutes.find(route => pathname.startsWith(route))) {
+        return null;
+    }
+
+    return <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4">
+            <div className="flex h-16 items-center justify-between">
+
+                {/* LEFT: Logo + Tabs */}
+                <div className="flex items-center gap-8">
+
+                    {/* Logo */}
+                    <a
+                        href="/"
+                        className="text-2xl font-extrabold tracking-tight select-none"
+                    >
+                        <span className="text-blue-600">Findit</span>
+                        <span className="text-green-600">Now</span>
+                    </a>
+
+                    {/* Tabs */}
+                    <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">
+                        {[
+                            {label: "Home", path: "/"},
+                            {label: "Products", path: "/products"},
+                            {label: "Shops", path: "/shops"},
+                        ].map(tab => (
+                            <button
+                                key={tab.path}
+                                onClick={() => router.push(tab.path)}
+                                className="px-4 py-1.5 text-sm font-medium rounded-full text-gray-600
+                         hover:text-gray-900 hover:bg-white
+                         transition-all"
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* RIGHT: Cart + Profile */}
+                <div className="flex items-center gap-4">
+
+                    {/* Cart */}
+                    <button
+                        onClick={() => router.push("/cart")}
+                        className="relative p-2 rounded-full hover:bg-gray-100 transition"
+                    >
+                        <ShoppingCart className="h-5 w-5 text-gray-700"/>
+                        {itemCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+                             rounded-full bg-blue-600 text-white text-xs
+                             flex items-center justify-center px-1">
+              {itemCount}
+            </span>
+                        )}
+                    </button>
+
+                    {/* Profile Dropdown */}
+                    <div className="relative group">
+
+                        <button
+                            className="flex items-center justify-center w-9 h-9
+                       rounded-full bg-gradient-to-br from-blue-600 to-indigo-600
+                       text-white font-semibold shadow-sm
+                       hover:shadow-md transition"
+                        >
+                            {isAuthenticated ? "S" : "?"}
+                        </button>
+
+                        {/* Dropdown */}
+                        <div
+                            className="absolute right-0 mt-2 w-40
+                       bg-white border border-gray-200 rounded-lg shadow-lg
+                       opacity-0 invisible group-hover:opacity-100
+                       group-hover:visible transition-all"
+                        >
+                            <div className="py-1 text-sm">
+                                {isAuthenticated && (
+                                    <>
+                                        <button
+                                            onClick={() => router.push("/profile")}
+                                            className="block w-full text-left px-4 py-2
+                               hover:bg-gray-100 text-gray-700"
+                                        >
+                                            Profile
+                                        </button>
+                                        <button
+                                            onClick={() => router.push("/orders")}
+                                            className="block w-full text-left px-4 py-2
+                               hover:bg-gray-100 text-gray-700"
+                                        >
+                                            Orders
+                                        </button>
+                                        <hr className="my-1"/>
+                                    </>
+                                )}
+                                <button
+                                    onClick={handleAuthAction}
+                                    className="block w-full text-left px-4 py-2
+                           text-red-600 hover:bg-red-50"
+                                >
+                                    {isAuthenticated ? "Logout" : "Login"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </nav>
+
 }
