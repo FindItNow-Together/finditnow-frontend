@@ -16,7 +16,7 @@ function Login() {
     const data = new FormData(e.currentTarget);
 
     api
-      .post("/auth/signin", Object.fromEntries(data.entries()), {
+      .post("/api/auth/signin", Object.fromEntries(data.entries()), {
         auth: "public",
       })
       .then((res) => {

@@ -21,7 +21,7 @@ function SignUp() {
     const payload = Object.fromEntries(formData.entries());
     console.log("Payload   ", payload);
     try {
-      const res = await api.post("/auth/signup", payload);
+      const res = await api.post("/api/auth/signup", payload);
       const data = await res.json();
 
       if (data.error) {

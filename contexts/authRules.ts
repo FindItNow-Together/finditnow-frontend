@@ -3,6 +3,7 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
     "/dashboard": ["SHOP"],
     "/register-shop": ["ADMIN", "SHOP"],
     "/shop": ["SHOP", "ADMIN"],
+    "/profile":["CUSTOMER", "SHOP", "DELIVERY_AGENT"],
     "/home": ["CUSTOMER", "SHOP", "ADMIN"],
     "/delivery": ["DELIVERY"],
 };

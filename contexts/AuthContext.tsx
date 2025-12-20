@@ -1,15 +1,8 @@
 "use client";
 
-import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
-import useApi from "@/hooks/useApi";
-import { usePathname, useRouter } from "next/navigation";
-import { ROLE_ROUTE_MAP } from "./authRules";
+import React, {createContext, useContext, useEffect, useMemo, useState,} from "react";
+import {usePathname, useRouter} from "next/navigation";
+import {ROLE_ROUTE_MAP} from "./authRules";
 
 export type AuthContextType = {
     accessToken: string | null;
@@ -24,17 +17,20 @@ export const AuthContext = createContext<AuthContextType>({
     accessToken: null,
     accessRole: null,
     isAuthenticated: false,
-    setAccessToken: () => {},
-    setAccessRole: () => {},
-    logout: () => {},
+    setAccessToken: () => {
+    },
+    setAccessRole: () => {
+    },
+    logout: () => {
+    },
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({children}: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [accessRole, setAccessRole] = useState<string | null>(null);
     const [authChecked, setAuthChecked] = useState(false);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost";
 
-    const api = useApi();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -48,12 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [accessToken, accessRole]);
 
     const logout = (cb?: () => void) => {
-        api
-            .post(
-                "/auth/logout",
-                {},
-                { headers: { Authorization: "Bearer " + accessToken } }
-            )
+        fetch(baseUrl + "/api/auth/logout",
+            {
+                method: "POST", headers: accessToken
+                    ? {Authorization: `Bearer ${accessToken}`}
+                    : {}, credentials: "include"
+            })
             .finally(() => {
                 setAccessToken(null);
                 setAccessRole(null);
@@ -66,7 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const bootstrapAuth = async () => {
             try {
-                const res = await api.post("/auth/refresh");
+                const res = await fetch(baseUrl + "/api/auth/refresh", {
+                    method: "POST",
+                    credentials: "include",
+                });
                 if (!res.ok) throw new Error("Not authenticated");
 
                 const data = await res.json();
@@ -125,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!authChecked) {
         return (
             <div className="fixed inset-0 flex items-center justify-center bg-white">
-                <div className="h-4 w-4 rounded-full bg-gray-900 animate-pulse" />
+                <div className="h-4 w-4 rounded-full bg-gray-900 animate-pulse"/>
             </div>
         );
     }

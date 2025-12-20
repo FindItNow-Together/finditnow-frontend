@@ -38,7 +38,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
         const code = digits.join("");
         if (code.length !== 6) return;
 
-        const res = await api.post("/auth/verifyemail", {credId, verificationCode: code})
+        const res = await api.post("/api/auth/verifyemail", {credId, verificationCode: code})
 
         const data = await res.json();
 
@@ -68,7 +68,7 @@ export default function VerifyOtp({credId}: { credId: string }) {
     const resendVerificationEmail = async () => {
         setDisableResend(true);
         try {
-            const res = await api.post("/auth/resendverificationemail", {credId})
+            const res = await api.post("/api/auth/resendverificationemail", {credId})
 
             if (!res.ok) {
                 console.log("error in resend")

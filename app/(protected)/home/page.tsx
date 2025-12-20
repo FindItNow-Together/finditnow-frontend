@@ -53,7 +53,6 @@ export default function MarketplaceMainPage() {
         data: s,
     }));
 
-    const [mode, setMode] = useState<'products' | 'shops' | 'both'>('products');
     const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
 
     const cart = useShopCart();
@@ -110,7 +109,7 @@ export default function MarketplaceMainPage() {
                 params.set('lng', String(userLoc.lng));
             }
             params.set('productId', productId);
-            const res = await api.get(`/shop/v1/shops?${params.toString()}`);
+            const res = await api.get(`/api/shop/search?${params.toString()}`);
             const body = await res.json();
             const ranked: Shop[] = body.items.sort((a: Shop, b: Shop) => {
                 if (a.deliveryAvailable !== b.deliveryAvailable) return a.deliveryAvailable ? -1 : 1;
@@ -136,7 +135,7 @@ export default function MarketplaceMainPage() {
                 params.set('lat', String(userLoc.lat));
                 params.set('lng', String(userLoc.lng));
             }
-            const res = await api.get(`/shop/v1/shops`);
+            const res = await api.get(`/api/shop/all`);
             const body = await res.json();
             const ranked: Shop[] = body.items.sort((a: Shop, b: Shop) => {
                 if (a.deliveryAvailable !== b.deliveryAvailable) return a.deliveryAvailable ? -1 : 1;
@@ -152,13 +151,10 @@ export default function MarketplaceMainPage() {
 
     useEffect(() => {
         if (debProductQuery) {
-            setMode('products');
             fetchProducts(1, false);
         } else if (debShopQuery) {
-            setMode('shops');
             fetchShops();
         } else {
-            setMode('both');
             fetchProducts(1, false);
             fetchShops();
         }
@@ -183,60 +179,7 @@ export default function MarketplaceMainPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-            {/* NAVBAR */}
-            <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center space-x-8">
-                        <Link href="/" className="font-semibold text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 transition-all">
-                            FindItNow
-                        </Link>
-                        <div className="hidden md:flex items-center gap-1 bg-slate-100 rounded-full p-1">
-                            <button
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                    mode === 'products'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                                onClick={() => setMode('products')}
-                            >
-                                Products
-                            </button>
-                            <button
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                    mode === 'shops'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                                onClick={() => setMode('shops')}
-                            >
-                                Shops
-                            </button>
-                            <button
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                    mode === 'both'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-600 hover:text-slate-900'
-                                }`}
-                                onClick={() => setMode('both')}
-                            >
-                                Both
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center space-x-6">
-                        <a href="/cart" className="relative group">
-                            <span className="text-slate-700 hover:text-slate-900 font-medium transition-colors">Cart</span>
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full group-hover:scale-110 transition-transform"></span>
-                        </a>
-                        <button className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium hover:bg-slate-100 rounded-lg transition-all">
-                            Profile ▾
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
+        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50">
             {/* DUAL SEARCH BAR */}
             <header className="max-w-7xl mx-auto px-6 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -355,7 +298,6 @@ export default function MarketplaceMainPage() {
                                         className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-600 rounded-lg transition-all duration-200 active:scale-95"
                                         onClick={() => {
                                             fetchShopsForProduct(p.id);
-                                            setMode('both');
                                         }}
                                     >
                                         View Shops
