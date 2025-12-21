@@ -1,25 +1,28 @@
 // components/Navbar.tsx
 'use client'
-import {ShoppingCart} from "lucide-react";
-import {usePathname, useRouter} from "next/navigation";
-import {useAuth} from "@/contexts/AuthContext";
-import {useCart} from "@/contexts/CartContext";
+import { ShoppingCart } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import Link from "next/link";
 
 export default function Navbar() {
     const router = useRouter();
-    const {logout, isAuthenticated} = useAuth();
+    const { logout, isAuthenticated, userData } = useAuth();
     const pathname = usePathname();
-    const {itemCount} = useCart();
+    const { itemCount } = useCart();
 
     const handleAuthAction = () => {
-        if(isAuthenticated){
+        if (isAuthenticated) {
             logout(() => router.replace("/"))
-        }else{
+        } else {
             router.push("/login")
         }
     }
 
     const authRoutes = ["/login", "/sign_up", "/register", "/verify_otp", "/forbidden", "/forgot_password"];
+
+    const profileText = isAuthenticated && userData?.firstName ? userData.firstName[0].toUpperCase() : "?"
 
     if (authRoutes.find(route => pathname.startsWith(route))) {
         return null;
@@ -33,20 +36,20 @@ export default function Navbar() {
                 <div className="flex items-center gap-8">
 
                     {/* Logo */}
-                    <a
+                    <Link
                         href="/"
                         className="text-2xl font-extrabold tracking-tight select-none"
                     >
                         <span className="text-blue-600">Findit</span>
                         <span className="text-green-600">Now</span>
-                    </a>
+                    </Link>
 
                     {/* Tabs */}
                     <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">
                         {[
-                            {label: "Home", path: "/"},
-                            {label: "Products", path: "/products"},
-                            {label: "Shops", path: "/shops"},
+                            { label: "Home", path: "/" },
+                            { label: "Products", path: "/products" },
+                            { label: "Shops", path: "/shops" },
                         ].map(tab => (
                             <button
                                 key={tab.path}
@@ -64,20 +67,23 @@ export default function Navbar() {
                 {/* RIGHT: Cart + Profile */}
                 <div className="flex items-center gap-4">
 
-                    {/* Cart */}
-                    <button
-                        onClick={() => router.push("/cart")}
-                        className="relative p-2 rounded-full hover:bg-gray-100 transition"
-                    >
-                        <ShoppingCart className="h-5 w-5 text-gray-700"/>
-                        {itemCount > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+                    {
+                        isAuthenticated && <button
+                            onClick={() => router.push("/cart")}
+                            className="relative p-2 rounded-full hover:bg-gray-100 transition"
+                        >
+                            <ShoppingCart className="h-5 w-5 text-gray-700" />
+                            {itemCount > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
                              rounded-full bg-blue-600 text-white text-xs
                              flex items-center justify-center px-1">
-              {itemCount}
-            </span>
-                        )}
-                    </button>
+                                    {itemCount}
+                                </span>
+                            )}
+                        </button>
+                    }
+                    {/* Cart */}
+
 
                     {/* Profile Dropdown */}
                     <div className="relative group">
@@ -88,7 +94,11 @@ export default function Navbar() {
                        text-white font-semibold shadow-sm
                        hover:shadow-md transition"
                         >
-                            {isAuthenticated ? "S" : "?"}
+                            {isAuthenticated && userData?.profileUrl ? <img
+                                src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                                alt="Profile"
+                                className="h-full w-full rounded-2xl object-cover ring-2 ring-gray-200 dark:ring-gray-600"
+                            /> : profileText}
                         </button>
 
                         {/* Dropdown */}
@@ -115,7 +125,7 @@ export default function Navbar() {
                                         >
                                             Orders
                                         </button>
-                                        <hr className="my-1"/>
+                                        <hr className="my-1" />
                                     </>
                                 )}
                                 <button

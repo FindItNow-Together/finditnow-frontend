@@ -1,8 +1,9 @@
 "use client";
 
-import React, {createContext, useContext, useEffect, useMemo, useState,} from "react";
-import {usePathname, useRouter} from "next/navigation";
-import {ROLE_ROUTE_MAP} from "./authRules";
+import React, { createContext, useContext, useEffect, useMemo, useState, } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { ROLE_ROUTE_MAP } from "./authRules";
+import { User } from "@/types/user";
 
 export type AuthContextType = {
     accessToken: string | null;
@@ -10,6 +11,8 @@ export type AuthContextType = {
     isAuthenticated: boolean;
     accessRole: string | null;
     setAccessRole: React.Dispatch<React.SetStateAction<string | null>>;
+    userData?: User;
+    setUserData: React.Dispatch<React.SetStateAction<User | undefined>>;
     logout: (cb?: () => void) => void;
 };
 
@@ -21,13 +24,17 @@ export const AuthContext = createContext<AuthContextType>({
     },
     setAccessRole: () => {
     },
+    setUserData: () => {
+    },
     logout: () => {
     },
 });
 
-export function AuthProvider({children}: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [accessRole, setAccessRole] = useState<string | null>(null);
+    const [userData, setUserData] = useState<User | undefined>();
+
     const [authChecked, setAuthChecked] = useState(false);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost";
 
@@ -47,7 +54,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         fetch(baseUrl + "/api/auth/logout",
             {
                 method: "POST", headers: accessToken
-                    ? {Authorization: `Bearer ${accessToken}`}
+                    ? { Authorization: `Bearer ${accessToken}` }
                     : {}, credentials: "include"
             })
             .finally(() => {
@@ -73,6 +80,17 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
 
                 setAccessToken(data.accessToken);
                 setAccessRole(data.profile);
+
+                const userRes = await fetch(baseUrl + "/api/user/me", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + data.accessToken
+                    }
+                })
+
+                const userResJson = await userRes.json();
+
+                setUserData(userResJson.data as User)
             } catch {
                 if (cancelled) return;
                 setAccessToken(null);
@@ -124,7 +142,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     if (!authChecked) {
         return (
             <div className="fixed inset-0 flex items-center justify-center bg-white">
-                <div className="h-4 w-4 rounded-full bg-gray-900 animate-pulse"/>
+                <div className="h-4 w-4 rounded-full bg-gray-900 animate-pulse" />
             </div>
         );
     }
@@ -136,6 +154,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 setAccessToken,
                 accessRole,
                 setAccessRole,
+                userData,
+                setUserData,
                 isAuthenticated,
                 logout,
             }}
