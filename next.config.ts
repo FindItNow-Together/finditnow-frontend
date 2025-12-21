@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
             {
                 protocol: 'http',
                 hostname: 'localhost', // The hostname of your image host
-                // port: '80', // Optional: specify a port if needed
+                port: '80', // Optional: specify a port if needed
                 pathname: '/api/files/**', // Optional: restrict to a specific path
             },
         ],

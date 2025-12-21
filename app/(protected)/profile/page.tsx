@@ -1,158 +1,171 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 import { User } from "@/types/user";
-import Image from "next/image";
+import { User2, Camera, CreditCard, MapPin, ShoppingBag, Truck, Image as ImageIcon, LayoutDashboard, Bell } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import UploadPhotoModal from "./_components/UploadPhotoModal";
 
-type UserRole = "customer" | "shopOwner" | "deliveryAgent";
-
+type UserRole = "CUSTOMER" | "SHOP" | "DELIVERY_AGENT";
 
 const baseTabs = [
-    { id: "overview", label: "Overview" },
-    { id: "orders", label: "Orders" },
-    { id: "profile", label: "Profile" },
-    { id: "cards", label: "Cards" },
-    { id: "addresses", label: "Addresses" },
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "orders", label: "Orders", icon: ShoppingBag },
+    { id: "profile", label: "Profile", icon: User2 },
+    { id: "cards", label: "Cards", icon: CreditCard },
+    { id: "addresses", label: "Addresses", icon: MapPin },
 ];
 
-const roleTabs: Record<UserRole, { id: string; label: string }[]> = {
-    customer: [],
-    shopOwner: [{ id: "shops", label: "Shops" }],
-    deliveryAgent: [{ id: "past-deliveries", label: "Past Deliveries" }],
+const roleTabs: Record<UserRole, { id: string; label: string; icon: React.ElementType }[]> = {
+    CUSTOMER: [],
+    SHOP: [{ id: "shops", label: "Shops", icon: ShoppingBag }],
+    DELIVERY_AGENT: [{ id: "past-deliveries", label: "Past Deliveries", icon: Truck }],
 };
+
 
 export default function Profile() {
     const { accessRole: role } = useAuth();
     const api = useApi();
-    const [userData, setUserData] = useState<User>()
-
+    const [userData, setUserData] = useState<User | undefined>();
     const [activeTab, setActiveTab] = useState<string>("overview");
 
     const tabs = React.useMemo(
-        () => [...baseTabs, ...(roleTabs[role] || [])],
+        () => [...baseTabs, ...(roleTabs[role || "customer"] || [])],
         [role]
     );
 
-    const fetchProfile = () => {
-        api.get("/api/user/me", { auth: "private" }).then(res => res.json()).then(data => {
-            setUserData(data.data as User)
-        })
-    }
+    const fetchProfile = async () => {
+        try {
+            const res = await api.get("/api/user/me", { auth: "private" });
+            const data = await res.json();
+            setUserData(data.data as User);
+        } catch (error) {
+            console.error("Failed to fetch profile:", error);
+        }
+    };
 
     useEffect(() => {
-        fetchProfile()
+        fetchProfile();
     }, []);
 
     return (
-        <div className="mx-auto flex max-w-6xl gap-6 px-4 py-6 lg:py-10">
-            {/* Sidebar */}
-            <aside className="w-56 shrink-0 border-r border-gray-200 pr-4 dark:border-gray-800">
-                <div className="mb-6 flex items-center gap-3">
-                    <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-200">
-                        {/* Replace with next/image + src from user */}
-                        <div
-                            className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
-                            {userData?.firstName.substring(0, 1)}
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar */}
+                    <aside className="w-full lg:w-64 shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:sticky lg:h-fit lg:top-8">
+                        {/* Profile Header */}
+                        <div className="mb-8 text-center lg:mb-10">
+                            <div className="relative mx-auto h-20 w-20 mb-4">
+                                {userData?.profileUrl ? (
+                                    <img
+                                        src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                                        alt="Profile"
+                                        className="h-full w-full rounded-2xl object-cover ring-2 ring-gray-200 dark:ring-gray-600"
+                                    />
+                                ) : (
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 ring-2 ring-gray-200 dark:ring-gray-600">
+                                        <User2 className="h-10 w-10" />
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowUploadPhotoModal(true)}
+                                    className="absolute -bottom-1 -right-1 h-8 w-8 bg-blue-600 hover:bg-blue-700 rounded-xl flex items-center justify-center text-white shadow-md transition-colors duration-200"
+                                >
+                                    <Camera className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                {userData?.firstName || "User"}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{role || "customer"}</p>
                         </div>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {userData?.firstName.toUpperCase()}
-                        </p>
-                        <p className="text-xs text-gray-500">{userData?.email}</p>
-                    </div>
+
+                        {/* Navigation */}
+                        <nav className="space-y-1">
+                            {tabs.map((tab) => {
+                                const Icon = tab.icon;
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`
+                                            flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-200
+                                            ${isActive
+                                                ? "bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100 border border-transparent"
+                                            }
+                                        `}
+                                    >
+                                        <Icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                                        <span>{tab.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+
+                        {/* Future sections */}
+                        <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">Coming soon</p>
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 group">
+                                    <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20">
+                                        <Bell className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notifications</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 space-y-6 lg:space-y-8">
+                        {activeTab === "overview" && <OverviewSection />}
+                        {activeTab === "orders" && <OrdersSection />}
+                        {activeTab === "profile" && <ProfileSection userData={userData} setUserData={setUserData} />}
+                        {activeTab === "cards" && <CardsSection />}
+                        {activeTab === "addresses" && <AddressesSection />}
+                        {role === "shopOwner" && activeTab === "shops" && <ShopsSection />}
+                        {role === "deliveryAgent" && activeTab === "past-deliveries" && <PastDeliveriesSection />}
+                    </main>
                 </div>
-
-                <nav className="space-y-1 text-sm">
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={[
-                                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition",
-                                    isActive
-                                        ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-                                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-900/40",
-                                ].join(" ")}
-                            >
-                                <span>{tab.label}</span>
-                            </button>
-                        );
-                    })}
-
-                    {/* Placeholder for future sections */}
-                    <div className="pt-4 text-xs uppercase tracking-wide text-gray-400">
-                        Future sections
-                    </div>
-                </nav>
-            </aside>
-
-            {/* Main content */}
-            <main className="flex-1 space-y-6">
-                {activeTab === "overview" && <OverviewSection />}
-
-                {activeTab === "orders" && <OrdersSection />}
-
-                {activeTab === "profile" && <ProfileSection userData={userData} />}
-
-                {activeTab === "cards" && <CardsSection />}
-
-                {activeTab === "addresses" && <AddressesSection />}
-
-                {role === "shopOwner" && activeTab === "shops" && <ShopsSection />}
-
-                {role === "deliveryAgent" &&
-                    activeTab === "past-deliveries" && <PastDeliveriesSection />}
-
-                {/* Example placeholder for future additions */}
-                {tabs.every((t) => t.id !== "notifications") && (
-                    <section className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                        Add new tab sections here later by extending the tabs arrays.
-                    </section>
-                )}
-            </main>
+            </div>
         </div>
     );
 }
 
-/* --- Sections (stub implementations you can wire to real data) --- */
-
 function OverviewSection() {
     return (
-        <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Overview
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-                Quick summary of recent orders, saved cards, and addresses.
-            </p>
-
-            <div className="grid gap-4 md:grid-cols-3">
-                <div
-                    className="rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <p className="text-xs text-gray-500">Total Orders</p>
-                    <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        24
-                    </p>
-                </div>
-                <div
-                    className="rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <p className="text-xs text-gray-500">Saved Cards</p>
-                    <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        3
-                    </p>
-                </div>
-                <div
-                    className="rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <p className="text-xs text-gray-500">Addresses</p>
-                    <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        2
-                    </p>
+        <section className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Overview</h2>
+                <div className="grid gap-6 lg:grid-cols-3">
+                    {[
+                        { label: "Total Orders", value: "24", change: "+12%", color: "blue" },
+                        { label: "Saved Cards", value: "3", icon: CreditCard },
+                        { label: "Addresses", value: "2", change: "+1", color: "emerald" }
+                    ].map(({ label, value, change, color }, i) => (
+                        <div key={i} className="group border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow duration-200">
+                            <div className="flex items-start justify-between">
+                                <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
+                                    <ShoppingBag className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{label}</p>
+                                    {change && (
+                                        <p className={`text-sm font-semibold mt-1 ${color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                            {change}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>
@@ -161,177 +174,228 @@ function OverviewSection() {
 
 function OrdersSection() {
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Orders
-                </h2>
+        <section className="space-y-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Orders</h2>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Your order history</p>
+                </div>
                 <input
                     type="search"
-                    placeholder="Search orders"
-                    className="w-40 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs focus:border-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+                    placeholder="Search orders..."
+                    className="w-full lg:w-72 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                 />
             </div>
 
-            <div
-                className="overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                    <thead className="bg-gray-50 text-xs text-gray-500 dark:bg-gray-950">
-                        <tr>
-                            <th className="px-4 py-2 text-left">Order</th>
-                            <th className="px-4 py-2 text-left">Date</th>
-                            <th className="px-4 py-2 text-left">Total</th>
-                            <th className="px-4 py-2 text-left">Status</th>
-                            <th className="px-4 py-2" />
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                        {[1, 2, 3].map((id) => (
-                            <tr key={id}>
-                                <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
-                                    #ORD{id.toString().padStart(4, "0")}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                                    20 Dec 2025
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-900 dark:text-gray-100">
-                                    ₹1,299
-                                </td>
-                                <td className="px-4 py-3 text-xs">
-                                    <span
-                                        className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                        Delivered
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-right text-xs">
-                                    <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100">
-                                        View
-                                    </button>
-                                </td>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</th>
+                                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {[1, 2, 3].map((id) => (
+                                <tr key={id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
+                                        #ORD{id.toString().padStart(4, "0")}
+                                    </td>
+                                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">20 Dec 2025</td>
+                                    <td className="px-4 py-4 font-semibold text-gray-900 dark:text-gray-100">₹1,299</td>
+                                    <td className="px-4 py-4">
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                            Delivered
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <button className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors duration-200">
+                                            View
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     );
 }
 
-function ProfileSection({ userData }: { userData: User | undefined }) {
-    console.log("USERDATA", userData)
+function ProfileSection({ userData, setUserData }: {
+    userData: User | undefined;
+    setUserData: React.Dispatch<React.SetStateAction<User | undefined>>
+}) {
+    const [showUploadPhotoModal, setShowUploadPhotoModal] = useState(false);
+    const api = useApi();
+
     if (!userData?.email) {
-        return null;
+        return (
+            <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                <div className="mx-auto h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-6">
+                    <User2 className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Loading profile...</h2>
+                <p className="text-gray-600 dark:text-gray-400">Please wait while we load your information.</p>
+            </div>
+        );
     }
+
+    const uploadProfilePhoto = async (file: File) => {
+        if (!userData) return;
+        const formData = new FormData();
+        formData.append("domain", userData.role);
+        formData.append("entityId", userData.id);
+        formData.append("purpose", "profile");
+        formData.append("file", file);
+
+        const response = await api.post("/api/files/upload", formData);
+        if (!response.ok) throw new Error("File upload failed");
+
+        const data = await response.json();
+        const res = await api.put(`/api/user/${userData.id}`, { ...userData, profileUrl: data.fileKey }, { auth: "private" });
+        if (!res.ok) throw new Error("File sync failed with user");
+        return data;
+    };
+
     return (
-        <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Profile
-            </h2>
-            <form
-                className="space-y-6 rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                    <div className="h-16 w-16 overflow-hidden rounded-full bg-gray-200">
-                        <Image src={"http://localhost/api/files" + (userData.profileUrl ? userData.profileUrl : "/sampleImage.png")} alt="U" height={64} width={64} />
-                    </div>
-                    <div className="space-y-1 text-xs text-gray-500">
-                        <p>Update your profile photo.</p>
-                        <button
-                            type="button"
-                            className="inline-flex items-center text-xs font-medium text-gray-900 underline hover:text-gray-700 dark:text-gray-100"
-                        >
-                            Change photo
-                        </button>
-                    </div>
-                </div>
+        <section>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 max-w-2xl">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">Profile Settings</h2>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                            Username
-                        </label>
-                        <input
-                            type="text"
-                            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-950"
-                            placeholder="your_username"
-                        />
+                <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center mb-8">
+                    <div className="flex flex-col items-center">
+                        <div className="relative mb-3">
+                            {userData.profileUrl ? (
+                                <img
+                                    src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                                    alt="Profile"
+                                    className="h-28 w-28 lg:h-32 lg:w-32 rounded-2xl object-cover ring-2 ring-gray-200 dark:ring-gray-600"
+                                />
+                            ) : (
+                                <div className="h-28 w-28 lg:h-32 lg:w-32 rounded-2xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-600">
+                                    <User2 className="h-14 w-14 lg:h-16 lg:w-16 text-gray-600 dark:text-gray-400" />
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setShowUploadPhotoModal(true)}
+                                className="absolute -bottom-2 -right-2 h-10 w-10 bg-blue-600 hover:bg-blue-700 rounded-2xl flex items-center justify-center text-white shadow-lg transition-colors duration-200"
+                            >
+                                <Camera className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">Click camera to update photo</p>
                     </div>
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                            Full name
-                        </label>
-                        <input
-                            type="text"
-                            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-950"
-                            placeholder="Your Name"
-                        />
+
+                    <div className="flex-1 space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    defaultValue={userData.firstName}
+                                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    defaultValue={userData.email}
+                                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 cursor-not-allowed opacity-60"
+                                    disabled
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Bio
+                            </label>
+                            <textarea
+                                rows={4}
+                                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 resize-vertical"
+                                placeholder="Tell us about yourself..."
+                            // defaultValue={userData.bio || ""}
+                            />
+                        </div>
+
+                        <div className="flex gap-4 pt-2">
+                            <button className="flex-1 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                                Save Changes
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Bio
-                    </label>
-                    <textarea
-                        rows={3}
-                        className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-950"
-                        placeholder="Tell something about yourself..."
-                    />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                    <button
-                        type="button"
-                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900/40"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
-                    >
-                        Save changes
-                    </button>
-                </div>
-            </form>
+            {showUploadPhotoModal && (
+                <UploadPhotoModal
+                    onClose={() => setShowUploadPhotoModal(false)}
+                    onUpload={async (file) => {
+                        try {
+                            const res = await uploadProfilePhoto(file);
+                            setShowUploadPhotoModal(false);
+                            if (res.fileKey && userData) {
+                                setUserData({ ...userData, profileUrl: res.fileKey });
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }}
+                />
+            )}
         </section>
     );
 }
 
+// Minimalistic CardsSection, AddressesSection, etc. follow the same pattern...
 function CardsSection() {
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Cards
-                </h2>
-                <button
-                    className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200">
-                    Add card
+        <section className="space-y-6">
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Payment Methods</h2>
+                </div>
+                <button className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                    Add Card
                 </button>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2].map((card) => (
-                    <div
-                        key={card}
-                        className="flex justify-between rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 p-4 text-xs text-white shadow-md dark:from-gray-100 dark:to-gray-400 dark:text-gray-900"
-                    >
-                        <div className="space-y-2">
-                            <p className="text-[10px] uppercase tracking-wide text-gray-300 dark:text-gray-700">
-                                Card holder
-                            </p>
-                            <p className="text-sm font-medium">User Name</p>
-                            <p className="text-[10px] uppercase tracking-wide text-gray-300 dark:text-gray-700">
-                                Number
-                            </p>
-                            <p className="font-mono">**** **** **** 1234</p>
+                    <div key={card} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cardholder</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">User Name</p>
+                            </div>
+                            <div className="h-12 w-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
+                                <span className="text-xl font-bold">★</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col items-end justify-between">
-                            <p className="text-[10px] uppercase tracking-wide text-gray-300 dark:text-gray-700">
-                                Exp
-                            </p>
-                            <p className="text-xs font-medium">12/27</p>
-                            <button className="mt-4 text-[11px] underline">
+                        <div className="space-y-2 mb-6">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Card number</p>
+                            <p className="font-mono text-lg font-semibold text-gray-900 dark:text-gray-100">**** **** **** 1234</p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Expires</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">12/27</p>
+                            </div>
+                            <button className="px-4 py-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors duration-200">
                                 Remove
                             </button>
                         </div>
@@ -344,40 +408,32 @@ function CardsSection() {
 
 function AddressesSection() {
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Addresses
-                </h2>
-                <button
-                    className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200">
-                    Add address
+        <section className="space-y-6">
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Addresses</h2>
+                </div>
+                <button className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                    Add Address
                 </button>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2].map((addr) => (
-                    <div
-                        key={addr}
-                        className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 text-xs shadow-sm dark:border-gray-800 dark:bg-gray-900"
-                    >
-                        <div className="mb-2 flex items-center justify-between">
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                                Home
-                            </p>
-                            <span
-                                className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                    <div key={addr} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-start justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Home</h3>
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full dark:bg-emerald-900/50 dark:text-emerald-300">
                                 Default
                             </span>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300">
+                        <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
                             123 Street Name, Locality, City, State - 123456
                         </p>
-                        <div className="mt-3 flex justify-end gap-2">
-                            <button className="text-[11px] text-gray-500 hover:text-gray-800 dark:hover:text-gray-100">
+                        <div className="flex gap-3">
+                            <button className="flex-1 px-4 py-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors duration-200">
                                 Edit
                             </button>
-                            <button className="text-[11px] text-red-500 hover:text-red-600">
+                            <button className="flex-1 px-4 py-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors duration-200">
                                 Remove
                             </button>
                         </div>
@@ -390,37 +446,27 @@ function AddressesSection() {
 
 function ShopsSection() {
     return (
-        <section className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Shops
-                </h2>
-                <button
-                    className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200">
-                    Add shop
+        <section className="space-y-6">
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Shops</h2>
+                </div>
+                <button className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+                    Add Shop
                 </button>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2].map((shop) => (
-                    <div
-                        key={shop}
-                        className="flex flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900"
-                    >
-                        <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                                Shop #{shop}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                                Brief shop description goes here.
-                            </p>
-                        </div>
-                        <div className="mt-3 flex justify-between text-xs">
-                            <button
-                                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">
+                    <div key={shop} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Shop #{shop}</h3>
+                        <p className="text-gray-700 dark:text-gray-300 mb-6">
+                            Brief shop description goes here.
+                        </p>
+                        <div className="flex gap-3">
+                            <button className="flex-1 px-4 py-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors duration-200">
                                 Manage
                             </button>
-                            <button className="text-red-500 hover:text-red-600">
+                            <button className="flex-1 px-4 py-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors duration-200">
                                 Disable
                             </button>
                         </div>
@@ -433,41 +479,33 @@ function ShopsSection() {
 
 function PastDeliveriesSection() {
     return (
-        <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Past deliveries
-            </h2>
-
-            <div
-                className="overflow-hidden rounded-lg border border-gray-200 bg-white text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                    <thead className="bg-gray-50 text-xs text-gray-500 dark:bg-gray-950">
-                        <tr>
-                            <th className="px-4 py-2 text-left">Delivery ID</th>
-                            <th className="px-4 py-2 text-left">Order</th>
-                            <th className="px-4 py-2 text-left">Date</th>
-                            <th className="px-4 py-2 text-left">Earnings</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                        {[1, 2, 3].map((d) => (
-                            <tr key={d}>
-                                <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
-                                    DELV-{1000 + d}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                                    #ORD{d.toString().padStart(4, "0")}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                                    19 Dec 2025
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-900 dark:text-gray-100">
-                                    ₹250
-                                </td>
+        <section>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Past Deliveries</h2>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delivery ID</th>
+                                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</th>
+                                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                <th className="px-4 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Earnings</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {[1, 2, 3].map((d) => (
+                                <tr key={d} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">DELV-{1000 + d}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">#ORD{d.toString().padStart(4, "0")}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">19 Dec 2025</td>
+                                    <td className="px-4 py-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">₹250</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     );
