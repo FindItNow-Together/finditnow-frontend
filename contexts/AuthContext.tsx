@@ -14,6 +14,7 @@ export type AuthContextType = {
     userData?: User;
     setUserData: React.Dispatch<React.SetStateAction<User | undefined>>;
     logout: (cb?: () => void) => void;
+    fetchAndSetUser: (accessToken?: string) => Promise<void>
 };
 
 export const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ export const AuthContext = createContext<AuthContextType>({
     },
     logout: () => {
     },
+    fetchAndSetUser: async () => { }
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -64,6 +66,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
     };
 
+    const fetchAndSetUser = async (token?: string) => {
+        if (!token && !accessToken) {
+            throw new Error("No token to fetch user")
+        }
+
+        const userRes = await fetch(baseUrl + "/api/user/me", {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + (token ? token : accessToken)
+            }
+        })
+
+        const userResJson = await userRes.json();
+
+        if (userResJson.error) {
+            throw new Error("Error in fetching the user::", userResJson.error)
+        }
+
+        setUserData(userResJson.data as User)
+    }
+
     useEffect(() => {
         let cancelled = false;
 
@@ -81,16 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setAccessToken(data.accessToken);
                 setAccessRole(data.profile);
 
-                const userRes = await fetch(baseUrl + "/api/user/me", {
-                    method: "GET",
-                    headers: {
-                        "Authorization": "Bearer " + data.accessToken
-                    }
-                })
-
-                const userResJson = await userRes.json();
-
-                setUserData(userResJson.data as User)
+                await fetchAndSetUser(data.accessToken)
             } catch {
                 if (cancelled) return;
                 setAccessToken(null);
@@ -158,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUserData,
                 isAuthenticated,
                 logout,
+                fetchAndSetUser,
             }}
         >
             {children}

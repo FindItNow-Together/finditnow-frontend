@@ -1,16 +1,16 @@
 "use client"
-import {useEffect, useRef, useState} from "react";
-import {clearInterval, setInterval} from "node:timers";
-import {useAuth} from "@/contexts/AuthContext";
-import {useRouter} from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { clearInterval, setInterval } from "node:timers";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
 
 let resendTimerInterval: NodeJS.Timeout | undefined;
-export default function VerifyOtp({credId}: { credId: string }) {
+export default function VerifyOtp({ credId }: { credId: string }) {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [resendTimer, setResendTimer] = useState(5);
     const [disableResend, setDisableResend] = useState(false);
-    const {setAccessToken, setAccessRole} = useAuth();
+    const { setAccessToken, setAccessRole, fetchAndSetUser } = useAuth();
     const router = useRouter();
     const api = useApi();
 
@@ -38,37 +38,40 @@ export default function VerifyOtp({credId}: { credId: string }) {
         const code = digits.join("");
         if (code.length !== 6) return;
 
-        const res = await api.post("/api/auth/verifyemail", {credId, verificationCode: code})
+        const res = await api.post("/api/auth/verifyemail", { credId, verificationCode: code })
 
         const data = await res.json();
 
         setAccessToken(data.accessToken);
         setAccessRole(data.profile as string)
-        let route;
 
-        switch (data.profile as string) {
-            case "CUSTOMER":
-                route = "/home"
-                break;
-            case "ADMIN":
-                route = "/admin";
-                break;
-            case "SHOP":
-                route = "/shop";
-                break;
-            case "DELIVERY":
-                route = "/delivery";
-                break;
-            default:
-                route = "/home";
-        }
-        router.replace(route)
+        fetchAndSetUser(data.accessToken).then(() => {
+            let route;
+
+            switch (data.profile as string) {
+                case "CUSTOMER":
+                    route = "/home";
+                    break;
+                case "ADMIN":
+                    route = "/admin/dashboard";
+                    break;
+                case "SHOP":
+                    route = "/dashboard";
+                    break;
+                case "DELIVERY":
+                    route = "/delivery";
+                    break;
+                default:
+                    route = "/home";
+            }
+            router.replace(route)
+        })
     };
 
     const resendVerificationEmail = async () => {
         setDisableResend(true);
         try {
-            const res = await api.post("/api/auth/resendverificationemail", {credId})
+            const res = await api.post("/api/auth/resendverificationemail", { credId })
 
             if (!res.ok) {
                 console.log("error in resend")
@@ -146,21 +149,21 @@ export default function VerifyOtp({credId}: { credId: string }) {
                 <div className="text-center text-gray-600">
                     Resend available in:
                     <span className="ml-2">
-                {resendTimer === 0 ? (
-                    <button
-                        onClick={resendVerificationEmail}
-                        disabled={disableResend}
-                        className="
+                        {resendTimer === 0 ? (
+                            <button
+                                onClick={resendVerificationEmail}
+                                disabled={disableResend}
+                                className="
                             text-blue-600 hover:text-blue-700 hover:underline
                             disabled:text-gray-400 disabled:no-underline
                         "
-                    >
-                        Resend Email
-                    </button>
-                ) : (
-                    <span className="font-medium">{resendTimer}s</span>
-                )}
-            </span>
+                            >
+                                Resend Email
+                            </button>
+                        ) : (
+                            <span className="font-medium">{resendTimer}s</span>
+                        )}
+                    </span>
                 </div>
 
             </div>

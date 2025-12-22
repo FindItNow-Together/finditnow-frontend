@@ -1,11 +1,10 @@
 'use client'
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import Link from "next/link";
+import { LocationMap } from "@/app/_components/Map";
+import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
 import useShopCart from "@/hooks/useShopCart";
-import {MapLocation} from "@/types/mapLocation";
-import {LocationMap} from "@/app/_components/Map";
-import useApi from "@/hooks/useApi";
+import { MapLocation } from "@/types/mapLocation";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Product = {
     id: string;
@@ -36,8 +35,8 @@ export default function MarketplaceMainPage() {
     const [productQuery, setProductQuery] = useState('');
     const [shopCategory, setShopCategory] = useState('all');
 
-    const {query: debProductQuery, setDebounceQuery: setDebounceProductQuery} = useDebounce(productQuery);
-    const {query: debShopQuery, setDebounceQuery: setDebouceShopQuery} = useDebounce(shopQuery);
+    const { query: debProductQuery, setDebounceQuery: setDebounceProductQuery } = useDebounce(productQuery);
+    const { query: debShopQuery, setDebounceQuery: setDebouceShopQuery } = useDebounce(shopQuery);
 
     const [products, setProducts] = useState<Product[]>([]);
     const [productPage, setProductPage] = useState(1);
@@ -61,9 +60,9 @@ export default function MarketplaceMainPage() {
     useEffect(() => {
         if (!('geolocation' in navigator)) return;
         navigator.geolocation.getCurrentPosition(
-            pos => setUserLoc({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-            () => {/* ignore errors */},
-            {timeout: 3000}
+            pos => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => {/* ignore errors */ },
+            { timeout: 3000 }
         );
     }, []);
 
@@ -169,7 +168,7 @@ export default function MarketplaceMainPage() {
                     fetchProducts(productPage + 1, true);
                 }
             });
-        }, {rootMargin: '200px'});
+        }, { rootMargin: '200px' });
         obs.observe(loadMoreRef.current);
         return () => obs.disconnect();
     }, [loadMoreRef.current, hasMoreProducts, productPage]);
@@ -306,7 +305,7 @@ export default function MarketplaceMainPage() {
                             ))}
                         </div>
 
-                        <div ref={loadMoreRef} className="h-8"/>
+                        <div ref={loadMoreRef} className="h-8" />
                         {!hasMoreProducts && products.length > 0 && (
                             <div className="text-center text-slate-400 py-8 text-sm">
                                 No more products to show
@@ -440,7 +439,7 @@ export default function MarketplaceMainPage() {
                                 </button>
                                 <button
                                     className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium transition-all shadow-sm hover:shadow active:scale-95"
-                                    onClick={() => {/* open shop checkout */}}
+                                    onClick={() => {/* open shop checkout */ }}
                                 >
                                     Go to Checkout
                                 </button>
