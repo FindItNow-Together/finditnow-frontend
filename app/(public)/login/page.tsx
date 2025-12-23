@@ -62,6 +62,10 @@ function Login() {
       .catch((err) => alert(err));
   };
 
+  const handleGoogleSignInClick = () => {
+    window.location.href = process.env.NEXT_PUBLIC_APP_URL + "/api/auth/oauth/google";
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-400">
       <div className="bg-white w-full max-w-md p-10 rounded-xl shadow-xl flex flex-col space-y-8">
@@ -117,7 +121,7 @@ function Login() {
           <div className="flex-grow h-px bg-gray-300"></div>
         </div>
 
-        <button className="w-full py-3 flex items-center justify-center gap-3 border border-gray-300 rounded-md hover:bg-gray-100 transition">
+        <button className="w-full py-3 flex items-center justify-center gap-3 border border-gray-300 rounded-md hover:bg-gray-100 transition" onClick={handleGoogleSignInClick}>
           <Image
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google icon"
