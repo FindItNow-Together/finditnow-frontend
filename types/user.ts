@@ -4,7 +4,7 @@ export interface User {
     lastName?: string | null;
     
     email: string;
-    role: "CUSTOMER" | "SHOP" | "DELIVERY_AGENT" | "ADMIN";
+    role: "CUSTOMER" | "SHOP" | "DELIVERY_AGENT" | "ADMIN" | "UNASSIGNED";
     profileUrl?: string | null;
     addresses: UserAddress[];
 }

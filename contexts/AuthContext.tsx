@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             accessToken != null &&
             accessToken.length > 0 &&
             accessRole != null &&
-            ["ADMIN", "CUSTOMER", "SHOP", "DELIVERY"].includes(accessRole)
+            ["ADMIN", "CUSTOMER", "SHOP", "DELIVERY", "UNASSIGNED"].includes(accessRole)
         );
     }, [accessToken, accessRole]);
 
