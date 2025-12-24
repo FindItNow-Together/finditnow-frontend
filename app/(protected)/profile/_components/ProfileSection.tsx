@@ -77,7 +77,7 @@ export default function ProfileSection({
     };
 
     const handleUpdateRole = async () => {
-        const res = await api.put("/api/auth/update_role", {role: userRole}, {auth: "private"});
+        const res = await api.put("/api/auth/updaterole", {role: userRole}, {auth: "private"});
 
         if (res.status == 500) {
             setError("Something went wrong!, try again later")
