@@ -1,10 +1,11 @@
+export type UserRole = "CUSTOMER" | "SHOP" | "DELIVERY_AGENT" | "ADMIN" | "UNASSIGNED";
 export interface User {
     id: string;
     firstName: string;
     lastName?: string | null;
     
     email: string;
-    role: "CUSTOMER" | "SHOP" | "DELIVERY_AGENT" | "ADMIN" | "UNASSIGNED";
+    role: UserRole;
     profileUrl?: string | null;
     addresses: UserAddress[];
 }

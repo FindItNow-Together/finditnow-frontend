@@ -1,6 +1,6 @@
 import useApi from "@/hooks/useApi";
-import { User } from "@/types/user";
-import { User2, Camera } from "lucide-react";
+import { User, UserRole } from "@/types/user";
+import { Camera, User2 } from "lucide-react";
 import { useState } from "react";
 import UploadPhotoModal from "./UploadPhotoModal";
 
@@ -12,6 +12,8 @@ export default function ProfileSection({
   setUserData: React.Dispatch<React.SetStateAction<User | undefined>>;
 }) {
   const [showUploadPhotoModal, setShowUploadPhotoModal] = useState(false);
+  const [userRole, setUserRole] = useState(userData?.role ?? "UNASSIGNED");
+
   const api = useApi();
 
   if (!userData?.email) {
@@ -53,9 +55,13 @@ export default function ProfileSection({
   };
 
   const handleUpdateProfile = async () => {
-    const res = await api.put(`/api/user/${userData.id}`, userData, {
-      auth: "private",
-    });
+    const res = await api.put(
+      `/api/user/${userData.id}`,
+      { ...userData, role: userRole },
+      {
+        auth: "private",
+      }
+    );
 
     const data = await res.json();
 
@@ -135,9 +141,7 @@ export default function ProfileSection({
                   </label>
                   <select
                     onChange={(e) => {
-                      setUserData((prev) => {
-                        return { ...prev, role: e.target.value } as User;
-                      });
+                      setUserRole(e.target.value as UserRole);
                     }}
                   >
                     <option value={"CUSTOMER"}>Customer</option>
