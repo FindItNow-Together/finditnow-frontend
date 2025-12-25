@@ -1,16 +1,32 @@
 // components/Navbar.tsx
 'use client'
-import { ShoppingCart } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
+import {ShoppingCart} from "lucide-react";
+import {usePathname, useRouter} from "next/navigation";
+import {useAuth} from "@/contexts/AuthContext";
+import {useCart} from "@/contexts/CartContext";
 import Link from "next/link";
+import {useEffect, useState} from "react";
+
+const accessRoleTabMapping: Record<string, string[]> = {
+    "CUSTOMER": ["Discover", "Orders"],
+    "SHOP": ["Discover", "Orders", "Dashboard"],
+    "DELIVERY_AGENT": ["Discover", "Orders", "Deliveries", "Dashboard"],
+    "UNASSIGNED": ["Discover", "Orders"],
+    "ADMIN": ["Dashboard"]
+}
+
+const tabList = new Set(Object.values(accessRoleTabMapping).flat());
 
 export default function Navbar() {
     const router = useRouter();
-    const { logout, isAuthenticated, userData } = useAuth();
+    const {logout, isAuthenticated, userData, accessRole} = useAuth();
     const pathname = usePathname();
-    const { itemCount } = useCart();
+    const {itemCount} = useCart();
+
+    const lastSlash = pathname.lastIndexOf("/");
+    const mayBeTab = pathname.substring(lastSlash + 1);
+
+    const [activeTab, setActiveTab] = useState(tabList.has(mayBeTab) ? mayBeTab : null);
 
     const handleAuthAction = () => {
         if (isAuthenticated) {
@@ -23,6 +39,12 @@ export default function Navbar() {
     const authRoutes = ["/login", "/sign_up", "/register", "/verify_otp", "/forbidden", "/forgot_password"];
 
     const profileText = isAuthenticated && userData?.firstName ? userData.firstName[0].toUpperCase() : "?"
+
+    useEffect(() => {
+        if (activeTab)
+            router.push(activeTab)
+
+    }, [activeTab]);
 
     if (authRoutes.find(route => pathname.startsWith(route))) {
         return null;
@@ -46,19 +68,15 @@ export default function Navbar() {
 
                     {/* Tabs */}
                     <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">
-                        {[
-                            { label: "Home", path: "/" },
-                            { label: "Products", path: "/products" },
-                            { label: "Shops", path: "/shops" },
-                        ].map(tab => (
+                        {accessRoleTabMapping[accessRole ?? "UNASSIGNED"].map(tab => (
                             <button
-                                key={tab.path}
-                                onClick={() => router.push(tab.path)}
-                                className="px-4 py-1.5 text-sm font-medium rounded-full text-gray-600
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-full text-gray-600
                          hover:text-gray-900 hover:bg-white
-                         transition-all"
+                         transition-all` + (tab == activeTab ? "underline" : "")}
                             >
-                                {tab.label}
+                                {tab}
                             </button>
                         ))}
                     </div>
@@ -72,7 +90,7 @@ export default function Navbar() {
                             onClick={() => router.push("/cart")}
                             className="relative p-2 rounded-full hover:bg-gray-100 transition"
                         >
-                            <ShoppingCart className="h-5 w-5 text-gray-700" />
+                            <ShoppingCart className="h-5 w-5 text-gray-700"/>
                             {itemCount > 0 && (
                                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
                              rounded-full bg-blue-600 text-white text-xs
@@ -125,7 +143,7 @@ export default function Navbar() {
                                         >
                                             Orders
                                         </button>
-                                        <hr className="my-1" />
+                                        <hr className="my-1"/>
                                     </>
                                 )}
                                 <button

@@ -1,4 +1,3 @@
-// app/page.tsx
 import {MapPin, Search, ShoppingBag, Store} from "lucide-react";
 import Link from "next/link";
 import LandingPageStarter from "@/app/_components/LandingPageStarter";

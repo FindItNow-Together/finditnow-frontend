@@ -5,7 +5,6 @@ import {useRouter} from "next/navigation";
 import {Shop} from "@/types/shop";
 import {Product} from "@/types/product";
 import ShopCard from "@/components/ShopCard";
-import {useAuth} from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 
 export default function DashboardPage() {
@@ -18,13 +17,10 @@ export default function DashboardPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const {isAuthenticated, logout} = useAuth();
 
     useEffect(() => {
-        if (isAuthenticated) {
-            loadShops();
-        }
-    }, [isAuthenticated]);
+        loadShops();
+    }, []);
 
     const loadShops = async () => {
         try {
@@ -53,12 +49,6 @@ export default function DashboardPage() {
         }
     };
 
-    const handleLogout = () => {
-        logout(() => {
-            router.push("/login");
-        });
-    };
-
     // Filter shops based on search query
     const filteredShops = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -83,14 +73,6 @@ export default function DashboardPage() {
         });
     }, [shops, searchQuery, shopsWithProducts]);
 
-    // if (isLoading) {
-    //   return <div className="container">Loading...</div>;
-    // }
-
-    if (!isAuthenticated) {
-        return null;
-    }
-
     if (loading) {
         return <div className="container">Loading shops...</div>;
     }
@@ -98,32 +80,6 @@ export default function DashboardPage() {
     if (shops.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
-                {/* Header Navbar */}
-                <header className="bg-white border-b border-gray-200">
-                    <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                        {/* Logo Section */}
-                        <div
-                            className="flex items-center gap-2 cursor-pointer"
-                            onClick={() => router.push("/")}
-                        >
-                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-xl">S</span>
-                            </div>
-                            <span className="text-xl font-bold text-gray-900 tracking-tight">
-                ShopManager
-              </span>
-                        </div>
-
-                        {/* Action Section */}
-                        <button
-                            onClick={handleLogout}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                        >
-                            Logout
-                        </button>
-                    </div>
-                </header>
-
                 {/* Main Content (Empty State) */}
                 <main className="flex-grow flex items-center justify-center p-4">
                     <div className="max-w-md w-full text-center">
@@ -150,30 +106,12 @@ export default function DashboardPage() {
                         </button>
                     </div>
                 </main>
-
-                {/* Footer (Optional) */}
-                <footer className="py-6 text-center text-sm text-gray-400">
-                    &copy; {new Date().getFullYear()} ShopManager Admin Portal
-                </footer>
             </div>
         );
     }
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6">
-            {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <h1 className="text-2xl font-semibold text-gray-800">My Shops</h1>
-
-                <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300 transition"
-                >
-                    Logout
-                </button>
-            </div>
-
-            {/* Error */}
             {error && (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
                     {error}
