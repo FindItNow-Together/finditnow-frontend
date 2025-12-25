@@ -76,7 +76,7 @@ export default function Profile() {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 {userData?.firstName || "User"}
                             </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{role || "customer"}</p>
+                            {/* <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{role || "customer"}</p> */}
                         </div>
 
                         {/* Navigation */}
