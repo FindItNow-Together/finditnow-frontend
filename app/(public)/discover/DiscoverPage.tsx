@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
 import { MapLocation } from "@/types/mapLocation";
@@ -74,7 +74,7 @@ export default function DiscoverClient() {
   }));
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
+    <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <header className="max-w-7xl mx-auto px-6 py-8">
         <ProductSearchBar
           value={query}

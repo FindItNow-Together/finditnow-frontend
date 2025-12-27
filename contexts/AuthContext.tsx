@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ROLE_ROUTE_MAP } from "./authRules";
+import { ROLE_DEFAULT_ROUTE, ROLE_ROUTE_MAP } from "./authRules";
 import { User } from "@/types/user";
 import { AuthInfo } from "@/app/layout";
 import { publicBaseUrl } from "@/hooks/useApi";
@@ -82,28 +82,7 @@ export function AuthProvider({
     setAccessToken(token);
     setAccessRole(role);
     setUserData(userResJson.data as User);
-    let route;
-
-    switch (role) {
-      case "CUSTOMER":
-        route = "/Discover";
-        break;
-      case "ADMIN":
-        route = "/admin/dashboard";
-        break;
-      case "SHOP":
-        route = "/dashboard";
-        break;
-      case "DELIVERY_AGENT":
-        route = "/delivery";
-        break;
-      case "UNASSIGNED":
-        route = "/Discover";
-        break;
-      default:
-        route = "/Discover";
-    }
-    router.replace(route);
+    router.replace(ROLE_DEFAULT_ROUTE[role] ?? "/discover");
   };
 
   useEffect(() => {
@@ -114,11 +93,7 @@ export function AuthProvider({
 
     // Logged-in users should not stay on auth pages
     if (isAuthenticated && authRoutes.includes(pathname)) {
-      const targetRoute = Object.entries(ROLE_ROUTE_MAP).find(([_, roles]) =>
-        roles.includes(accessRole!)
-      )?.[0];
-
-      router.replace(targetRoute || "/");
+      router.replace(ROLE_DEFAULT_ROUTE[accessRole!] ?? "/");
       return;
     }
 
