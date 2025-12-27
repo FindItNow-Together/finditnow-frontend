@@ -1,6 +1,7 @@
 "use client";
 
 import {useAuth} from "@/contexts/AuthContext";
+import { URL } from "node:url";
 
 type ApiAccess = "public" | "private";
 
@@ -16,6 +17,21 @@ function rewriteUrl(url: string): string {
 
     return url;
 }
+
+function getBaseUrl(envUrl?: string): string{
+    const baseUrl = envUrl ?? "http://localhost";
+    
+    try {
+        new URL(baseUrl); 
+        return baseUrl;
+    } catch (err) {
+        console.error("Invalid BASE_URL provided, falling back to localhost:", err);
+        return "http://localhost";
+    }
+}
+
+export const internalBaseUrl = getBaseUrl(process.env.INTERNAL_BASE_URL);
+export const publicBaseUrl = getBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
 
 async function coreRequest(
     url: string,

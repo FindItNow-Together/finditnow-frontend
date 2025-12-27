@@ -4,6 +4,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState, } from 
 import { usePathname, useRouter } from "next/navigation";
 import { ROLE_ROUTE_MAP } from "./authRules";
 import { User } from "@/types/user";
+import { AuthInfo } from "@/app/layout";
+import { publicBaseUrl } from "@/hooks/useApi";
 
 export type AuthContextType = {
     accessToken: string | null;
@@ -32,13 +34,12 @@ export const AuthContext = createContext<AuthContextType>({
     fetchAndSetUser: async () => { }
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [accessRole, setAccessRole] = useState<string | null>(null);
-    const [userData, setUserData] = useState<User | undefined>();
+export function AuthProvider({ auth, children }: { auth: AuthInfo | null,  children: React.ReactNode }) {
+    const [accessToken, setAccessToken] = useState<string | null>(auth?.accessToken ?? null);
+    const [accessRole, setAccessRole] = useState<string | null>(auth?.accessRole ?? null);
+    const [userData, setUserData] = useState<User | undefined>(auth?.user);
 
     const [authChecked, setAuthChecked] = useState(false);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost";
 
     const router = useRouter();
     const pathname = usePathname();
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [accessToken, accessRole]);
 
     const logout = (cb?: () => void) => {
-        fetch(baseUrl + "/api/auth/logout",
+        fetch(publicBaseUrl + "/api/auth/logout",
             {
                 method: "POST", headers: accessToken
                     ? { Authorization: `Bearer ${accessToken}` }
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error("No token to fetch user")
         }
 
-        const userRes = await fetch(baseUrl + "/api/user/me", {
+        const userRes = await fetch(publicBaseUrl + "/api/user/me", {
             method: "GET",
             headers: {
                 "Authorization": "Bearer " + (token ? token : accessToken)
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const bootstrapAuth = async () => {
             try {
-                const res = await fetch(baseUrl + "/api/auth/refresh", {
+                const res = await fetch(publicBaseUrl + "/api/auth/refresh", {
                     method: "POST",
                     credentials: "include",
                 });
