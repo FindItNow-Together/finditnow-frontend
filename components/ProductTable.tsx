@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Product } from '@/types/product';
+import { Product } from "@/types/product";
 
 interface ProductTableProps {
   products: Product[];
@@ -29,22 +29,22 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
         {products.map((product) => (
           <tr key={product.id}>
             <td>{product.name}</td>
-            <td>{product.description || '-'}</td>
+            <td>{product.description || "-"}</td>
             <td>${product.price.toFixed(2)}</td>
             <td>{product.stock}</td>
-            <td>{product.category || '-'}</td>
+            <td>{product.category || "-"}</td>
             <td>
               <button
                 className="btn btn-secondary"
                 onClick={() => onEdit(product)}
-                style={{ marginRight: '8px', padding: '6px 12px', fontSize: '14px' }}
+                style={{ marginRight: "8px", padding: "6px 12px", fontSize: "14px" }}
               >
                 Edit
               </button>
               <button
                 className="btn btn-danger"
                 onClick={() => onDelete(product.id)}
-                style={{ padding: '6px 12px', fontSize: '14px' }}
+                style={{ padding: "6px 12px", fontSize: "14px" }}
               >
                 Delete
               </button>
@@ -55,4 +55,3 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
     </table>
   );
 }
-

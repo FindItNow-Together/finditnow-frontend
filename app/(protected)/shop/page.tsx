@@ -17,16 +17,11 @@ export default function NoShopsPage() {
       <header className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo Section */}
-          <div 
-            className="flex items-center gap-2 cursor-pointer" 
-            onClick={() => router.push("/")}
-          >
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">S</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
-              ShopManager
-            </span>
+            <span className="text-xl font-bold text-gray-900 tracking-tight">ShopManager</span>
           </div>
 
           {/* Action Section */}
@@ -47,12 +42,10 @@ export default function NoShopsPage() {
             <span className="text-4xl">🏪</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            No shops found
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">No shops found</h1>
           <p className="text-gray-600 mb-8">
-            Your system currently has no registered shops. Get started by creating 
-            your first storefront to manage products and inventory.
+            Your system currently has no registered shops. Get started by creating your first
+            storefront to manage products and inventory.
           </p>
 
           <button
@@ -64,7 +57,7 @@ export default function NoShopsPage() {
           </button>
         </div>
       </main>
-      
+
       {/* Footer (Optional) */}
       <footer className="py-6 text-center text-sm text-gray-400">
         &copy; {new Date().getFullYear()} ShopManager Admin Portal

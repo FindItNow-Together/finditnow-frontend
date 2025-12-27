@@ -3,12 +3,12 @@ import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import useApi from "@/hooks/useApi";
+import useApi, { publicBaseUrl } from "@/hooks/useApi";
 
 function Login() {
   const [error, setError] = useState("");
   const router = useRouter();
-  const { setAccessToken, setAccessRole, fetchAndSetUser } = useAuth();
+  const { setAuth } = useAuth();
   const api = useApi();
 
   const login = (e: FormEvent<HTMLFormElement>) => {
@@ -34,37 +34,18 @@ function Login() {
           setError((data.error as string).split("_").join(" "));
           return;
         }
-        setAccessToken(data.accessToken);
-        setAccessRole(data.profile as string);
 
-        fetchAndSetUser(data.accessToken).then(() => {
-          let route;
-
-          switch (data.profile as string) {
-            case "CUSTOMER":
-              route = "/home";
-              break;
-            case "ADMIN":
-              route = "/admin/dashboard";
-              break;
-            case "SHOP":
-              route = "/dashboard";
-              break;
-            case "DELIVERY":
-              route = "/delivery";
-              break;
-            default:
-              route = "/home";
-          }
-          router.replace(route);
-        })
+        setAuth(data.accessToken, data.profile).catch((err) => {
+          console.error(err);
+          throw err;
+        });
       })
       .catch((err) => alert(err));
   };
 
   const handleGoogleSignInClick = () => {
-    window.location.href = process.env.NEXT_PUBLIC_APP_URL + "/api/auth/oauth/google";
-  }
+    window.location.href = publicBaseUrl + "/api/auth/oauth/google";
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-400">
@@ -73,10 +54,7 @@ function Login() {
           <h1 className="text-3xl font-semibold text-gray-800">FindItNow</h1>
         </div>
 
-        <form
-          className="flex flex-col space-y-4 text-gray-800"
-          onSubmit={login}
-        >
+        <form className="flex flex-col space-y-4 text-gray-800" onSubmit={login}>
           <input
             type="email"
             name="email"
@@ -121,7 +99,10 @@ function Login() {
           <div className="flex-grow h-px bg-gray-300"></div>
         </div>
 
-        <button className="w-full py-3 flex items-center justify-center gap-3 border border-gray-300 rounded-md hover:bg-gray-100 transition" onClick={handleGoogleSignInClick}>
+        <button
+          className="w-full py-3 flex items-center justify-center gap-3 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+          onClick={handleGoogleSignInClick}
+        >
           <Image
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google icon"
@@ -133,10 +114,7 @@ function Login() {
 
         <div className="text-center text-sm text-gray-600">
           Don’t have an account?
-          <a
-            className="text-black font-medium ml-2 cursor-pointer hover:underline"
-            href="/sign_up"
-          >
+          <a className="text-black font-medium ml-2 cursor-pointer hover:underline" href="/sign_up">
             Sign up
           </a>
         </div>

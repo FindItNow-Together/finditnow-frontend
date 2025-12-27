@@ -11,12 +11,7 @@ interface ProductFormProps {
   onCancel: () => void;
 }
 
-export default function ProductForm({
-  shopId,
-  product,
-  onSave,
-  onCancel,
-}: ProductFormProps) {
+export default function ProductForm({ shopId, product, onSave, onCancel }: ProductFormProps) {
   const [formData, setFormData] = useState<ProductRequest>({
     name: "",
     description: "",
@@ -24,7 +19,7 @@ export default function ProductForm({
     stock: 0,
     category: "",
   });
-  
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { productApi } = useApi();
@@ -61,18 +56,20 @@ export default function ProductForm({
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
         name === "price"
-          ? value === "" ? 0 : parseFloat(value)
+          ? value === ""
+            ? 0
+            : parseFloat(value)
           : name === "stock"
-          ? value === "" ? 0 : parseInt(value)
-          : value,
+            ? value === ""
+              ? 0
+              : parseInt(value)
+            : value,
     }));
   };
 

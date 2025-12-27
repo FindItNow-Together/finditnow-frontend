@@ -11,9 +11,7 @@ import useApi from "@/hooks/useApi";
 export default function AdminDashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const { accessRole, setAccessRole, setAccessToken, logout } = useAuth();
-  const [shopsWithProducts, setShopsWithProducts] = useState<
-    Map<number, Product[]>
-  >(new Map());
+  const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
   const { productApi, shopApi } = useApi();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,14 +24,14 @@ export default function AdminDashboardPage() {
 
   const loadAllShops = async () => {
     try {
-      const shops = await shopApi.getAllShops() as Shop[];
+      const shops = (await shopApi.getAllShops()) as Shop[];
       setShops(shops);
 
       const productsMap = new Map<number, Product[]>();
       await Promise.all(
         shops.map(async (shop) => {
           try {
-            const products = await productApi.getByShop(shop.id) as Product[];
+            const products = (await productApi.getByShop(shop.id)) as Product[];
             productsMap.set(shop.id, products);
           } catch {
             productsMap.set(shop.id, []);
@@ -64,20 +62,14 @@ export default function AdminDashboardPage() {
         shop.phone.toLowerCase().includes(query);
 
       const products = shopsWithProducts.get(shop.id) || [];
-      const matchesProducts = products.some((p) =>
-        p.name.toLowerCase().includes(query)
-      );
+      const matchesProducts = products.some((p) => p.name.toLowerCase().includes(query));
 
       return matchesShop || matchesProducts;
     });
   }, [shops, searchQuery, shopsWithProducts]);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-gray-600">
-        Loading shops...
-      </div>
-    );
+    return <div className="container mx-auto px-4 py-8 text-gray-600">Loading shops...</div>;
   }
 
   return (
@@ -86,9 +78,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-sm text-gray-500">
-            Manage all shops in the system
-          </p>
+          <p className="text-sm text-gray-500">Manage all shops in the system</p>
         </div>
 
         <button
@@ -100,11 +90,7 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md bg-red-50 text-red-700 px-4 py-2">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 rounded-md bg-red-50 text-red-700 px-4 py-2">{error}</div>}
 
       {/* Stats */}
       <div className="mb-6 rounded-lg bg-blue-50 border border-blue-100 p-6">
@@ -115,10 +101,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold text-green-600">
-              {Array.from(shopsWithProducts.values()).reduce(
-                (sum, p) => sum + p.length,
-                0
-              )}
+              {Array.from(shopsWithProducts.values()).reduce((sum, p) => sum + p.length, 0)}
             </p>
             <p className="text-sm text-gray-600">Total Products</p>
           </div>
@@ -156,9 +139,7 @@ export default function AdminDashboardPage() {
                                    px-4 py-3 pr-10 text-gray-900
                                    focus:border-blue-500 focus:outline-none"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-            🔍
-          </span>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         </div>
 
         {searchQuery && (
@@ -183,7 +164,7 @@ export default function AdminDashboardPage() {
         </div>
       ) : filteredShops.length === 0 ? (
         <div className="rounded-lg border border-gray-200 p-6 text-center text-gray-600">
-          No shops found matching "{searchQuery}"
+          No shops found matching &#34;{searchQuery}&#34;
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">

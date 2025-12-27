@@ -75,11 +75,7 @@ export default function ProfileSection({
   };
 
   const handleUpdateRole = async () => {
-    const res = await api.put(
-      "/api/auth/updaterole",
-      { role: userRole },
-      { auth: "private" }
-    );
+    const res = await api.put("/api/auth/updaterole", { role: userRole }, { auth: "private" });
 
     if (res.status == 500) {
       setError("Something went wrong!, try again later");
@@ -102,10 +98,7 @@ export default function ProfileSection({
               <div className="relative mb-3">
                 {userData.profileUrl ? (
                   <img
-                    src={
-                      process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL +
-                      userData.profileUrl
-                    }
+                    src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
                     alt="Profile"
                     className="h-28 w-28 lg:h-32 lg:w-32 rounded-2xl object-cover ring-2 ring-gray-200 dark:ring-gray-600"
                   />
@@ -138,9 +131,7 @@ export default function ProfileSection({
                     defaultValue={userData.firstName}
                     className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                     onChange={(e) =>
-                      setUserData((prev) =>
-                        prev ? { ...prev, firstName: e.target.value } : prev
-                      )
+                      setUserData((prev) => (prev ? { ...prev, firstName: e.target.value } : prev))
                     }
                   />
                 </div>

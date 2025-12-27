@@ -20,9 +20,7 @@ const formatCoordinate = (value?: number) => {
 
 export default function AdminDeleteShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [selectedShopIds, setSelectedShopIds] = useState<Set<number>>(
-    new Set()
-  );
+  const [selectedShopIds, setSelectedShopIds] = useState<Set<number>>(new Set());
   const [showConfirmation, setShowConfirmation] = useState(false);
   const { shopApi } = useApi();
   const [shopsToDelete, setShopsToDelete] = useState<Shop[]>([]);
@@ -43,7 +41,7 @@ export default function AdminDeleteShopsPage() {
 
   const loadShops = async () => {
     try {
-      const shops = await shopApi.getAllShops() as Shop[];
+      const shops = (await shopApi.getAllShops()) as Shop[];
       setShops(shops);
       setError(null);
     } catch (err: any) {
@@ -133,10 +131,7 @@ export default function AdminDeleteShopsPage() {
           }}
         >
           <h1>Confirm Deletion</h1>
-          <button
-            className="btn btn-secondary"
-            onClick={() => router.push("/admin/dashboard")}
-          >
+          <button className="btn btn-secondary" onClick={() => router.push("/admin/dashboard")}>
             Back to Dashboard
           </button>
         </div>
@@ -153,9 +148,8 @@ export default function AdminDeleteShopsPage() {
           </h2>
 
           <p style={{ marginBottom: "20px", color: "#666" }}>
-            The following {shopsToDelete.length} shop(s) will be permanently
-            deleted. This will also delete all products in these shops. This
-            action cannot be undone.
+            The following {shopsToDelete.length} shop(s) will be permanently deleted. This will also
+            delete all products in these shops. This action cannot be undone.
           </p>
 
           <div style={{ marginBottom: "24px" }}>
@@ -183,9 +177,7 @@ export default function AdminDeleteShopsPage() {
                   </span>
                   <br />
                   <span style={{ color: "#666", fontSize: "13px" }}>
-                    Delivery:{" "}
-                    {deliveryOptionLabels[shop.deliveryOption] ||
-                      shop.deliveryOption}
+                    Delivery: {deliveryOptionLabels[shop.deliveryOption] || shop.deliveryOption}
                   </span>
                 </li>
               ))}
@@ -226,10 +218,7 @@ export default function AdminDeleteShopsPage() {
         }}
       >
         <h1>Remove Shops (Admin)</h1>
-        <button
-          className="btn btn-secondary"
-          onClick={() => router.push("/admin/dashboard")}
-        >
+        <button className="btn btn-secondary" onClick={() => router.push("/admin/dashboard")}>
           Back to Dashboard
         </button>
       </div>
@@ -240,13 +229,9 @@ export default function AdminDeleteShopsPage() {
         </div>
       )}
 
-      <div
-        className="card"
-        style={{ marginBottom: "24px", backgroundColor: "#fff3cd" }}
-      >
+      <div className="card" style={{ marginBottom: "24px", backgroundColor: "#fff3cd" }}>
         <p style={{ margin: 0 }}>
-          <strong>⚠️ Admin Mode:</strong> You are viewing and can delete ALL
-          shops in the system.
+          <strong>⚠️ Admin Mode:</strong> You are viewing and can delete ALL shops in the system.
         </p>
       </div>
 
@@ -283,25 +268,17 @@ export default function AdminDeleteShopsPage() {
                 />
 
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, marginBottom: "4px" }}>
-                    {shop.name}
-                  </h3>
+                  <h3 style={{ margin: 0, marginBottom: "4px" }}>{shop.name}</h3>
                   <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
                     Owner ID: {shop.ownerId}
                   </p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                    {shop.address}
-                  </p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                    Phone: {shop.phone}
-                  </p>
+                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>{shop.address}</p>
+                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>Phone: {shop.phone}</p>
                   <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
                     Open Hours: {shop.openHours}
                   </p>
                   <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
-                    Delivery:{" "}
-                    {deliveryOptionLabels[shop.deliveryOption] ||
-                      shop.deliveryOption}
+                    Delivery: {deliveryOptionLabels[shop.deliveryOption] || shop.deliveryOption}
                   </p>
                 </div>
               </div>
@@ -311,18 +288,11 @@ export default function AdminDeleteShopsPage() {
 
         {selectedShopIds.size > 0 && (
           <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-            <button
-              className="btn btn-danger"
-              onClick={handleDeleteSelected}
-              style={{ flex: 1 }}
-            >
+            <button className="btn btn-danger" onClick={handleDeleteSelected} style={{ flex: 1 }}>
               Delete Selected ({selectedShopIds.size} shop
               {selectedShopIds.size > 1 ? "s" : ""})
             </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setSelectedShopIds(new Set())}
-            >
+            <button className="btn btn-secondary" onClick={() => setSelectedShopIds(new Set())}>
               Clear Selection
             </button>
           </div>

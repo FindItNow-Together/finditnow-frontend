@@ -68,12 +68,10 @@ function SignUp() {
               </svg>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            Registration Received
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800">Registration Received</h2>
           <p className="text-gray-600">
-            Admin accounts require manual approval. Please contact the system
-            administrator to verify your credentials.
+            Admin accounts require manual approval. Please contact the system administrator to
+            verify your credentials.
           </p>
           <button
             onClick={() => router.push("/login")}
@@ -94,10 +92,7 @@ function SignUp() {
           <p className="text-gray-500 text-sm mt-2">Create your account</p>
         </div>
 
-        <form
-          className="flex flex-col space-y-4 text-gray-800"
-          onSubmit={signUpUser}
-        >
+        <form className="flex flex-col space-y-4 text-gray-800" onSubmit={signUpUser}>
           <input
             type="text"
             name="firstName"
@@ -115,27 +110,26 @@ function SignUp() {
 
           {/* Role Selection */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
-            {["CUSTOMER", "SHOP_OWNER", "DELIVERY_AGENT", "ADMIN"].map(
-              (role) => (
-                <label
-                  key={role}
-                  className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${selectedRole === (role == "SHOP_OWNER" ? "shop" : role)
-                      ? "bg-white shadow-sm text-black"
-                      : "text-gray-500"
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role == "SHOP_OWNER" ? "shop" : role}
-                    className="hidden"
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    checked={selectedRole === (role == "SHOP_OWNER" ? "shop" : role)}
-                  />
-                  {role.replace("_", " ")}
-                </label>
-              )
-            )}
+            {["CUSTOMER", "SHOP_OWNER", "DELIVERY_AGENT", "ADMIN"].map((role) => (
+              <label
+                key={role}
+                className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${
+                  selectedRole === (role == "SHOP_OWNER" ? "shop" : role)
+                    ? "bg-white shadow-sm text-black"
+                    : "text-gray-500"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value={role == "SHOP_OWNER" ? "shop" : role}
+                  className="hidden"
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  checked={selectedRole === (role == "SHOP_OWNER" ? "shop" : role)}
+                />
+                {role.replace("_", " ")}
+              </label>
+            ))}
           </div>
 
           <input
@@ -162,10 +156,7 @@ function SignUp() {
 
         <div className="text-center text-sm text-gray-600">
           Already have an account?
-          <a
-            className="text-black font-medium ml-2 cursor-pointer hover:underline"
-            href={"/login"}
-          >
+          <a className="text-black font-medium ml-2 cursor-pointer hover:underline" href={"/login"}>
             Sign In
           </a>
         </div>

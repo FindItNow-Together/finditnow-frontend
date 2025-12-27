@@ -39,7 +39,7 @@ export default function RegisterShopPage() {
   }, []);
 
   const handleMapSelection = (lat: number, lng: number) => {
-    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,48 +69,36 @@ export default function RegisterShopPage() {
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           {/* Basic Info */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Shop Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Shop Name</label>
             <input
               required
               className="w-full px-4 py-2 border rounded-lg mt-1"
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Phone</label>
               <input
                 required
                 className="w-full px-4 py-2 border rounded-lg mt-1"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Open Hours
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Open Hours</label>
               <input
                 required
                 className="w-full px-4 py-2 border rounded-lg mt-1"
                 type="text"
                 placeholder="9 AM - 6 PM"
                 value={formData.openHours}
-                onChange={(e) =>
-                  setFormData({ ...formData, openHours: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, openHours: e.target.value })}
               />
             </div>
           </div>
@@ -118,9 +106,7 @@ export default function RegisterShopPage() {
           {/* Location Picker Section */}
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-blue-800">
-                Location Coordinates
-              </span>
+              <span className="text-sm font-semibold text-blue-800">Location Coordinates</span>
               <button
                 type="button"
                 onClick={() => setShowMapModal(true)}
@@ -137,30 +123,22 @@ export default function RegisterShopPage() {
 
           {/* Other Fields */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Address</label>
             <textarea
               required
               className="w-full px-4 py-2 border rounded-lg mt-1"
               rows={2}
               value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Delivery Option
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Delivery Option</label>
             <select
               className="w-full px-4 py-2 border rounded-lg mt-1"
               value={formData.deliveryOption}
-              onChange={(e) =>
-                setFormData({ ...formData, deliveryOption: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value })}
             >
               <option value="PICKUP">Pickup Only</option>
               <option value="DELIVERY">Delivery Only</option>
