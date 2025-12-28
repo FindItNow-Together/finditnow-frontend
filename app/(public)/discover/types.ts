@@ -10,8 +10,8 @@ export type Opportunity = {
   shop: {
     id: string;
     name: string;
-    lat: number;
-    lng: number;
+    latitude: number;
+    longitude: number;
     deliveryAvailable: boolean;
   };
   price: number;

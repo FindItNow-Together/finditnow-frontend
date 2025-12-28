@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
-import { MapLocation } from "@/types/mapLocation";
 
 import { Opportunity } from "./types";
 import { STATIC_OPPORTUNITIES } from "./staticOpportunities";
@@ -11,6 +10,7 @@ import { STATIC_OPPORTUNITIES } from "./staticOpportunities";
 import ProductSearchBar from "./_components/ProductSearchBar";
 import ProductList from "./_components/ProductList";
 import DiscoverMap from "./_components/DiscoverMap";
+import { MapLocation } from "@/types/mapLocation";
 
 export default function DiscoverClient() {
   const api = useApi();
@@ -46,10 +46,18 @@ export default function DiscoverClient() {
       if (!res.ok) throw new Error();
 
       const body = await res.json();
-      if (!body.opportunities) throw new Error();
+      const opportunities = body?.data?.content;
+      if (!Array.isArray(opportunities)) {
+        throw new Error("Invalid response shape");
+      }
 
-      setOpportunities(body.opportunities);
-      setUsingMock(false);
+      if (opportunities.length != 0) {
+        setOpportunities(opportunities);
+        setUsingMock(false);
+      } else {
+        setOpportunities(STATIC_OPPORTUNITIES);
+        setUsingMock(true);
+      }
     } catch {
       setOpportunities(STATIC_OPPORTUNITIES);
       setUsingMock(true);
@@ -68,8 +76,8 @@ export default function DiscoverClient() {
   /* derive map locations */
   const mapLocations: MapLocation<Opportunity>[] = opportunities.map((o) => ({
     id: `${o.shop.id}-${o.product.id}`,
-    lat: o.shop.lat,
-    lng: o.shop.lng,
+    lat: o.shop.latitude,
+    lng: o.shop.longitude,
     data: o,
   }));
 

@@ -1,5 +1,5 @@
-import { LocationMap } from "@/app/_components/Map";
 import ShopPopup from "./ShopPopup";
+import LocationMap from "@/app/_components/Map";
 
 export default function DiscoverMap({ locations, userLocation }: any) {
   return (

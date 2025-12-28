@@ -11,36 +11,47 @@ function Login() {
   const { setAuth } = useAuth();
   const api = useApi();
 
-  const login = (e: FormEvent<HTMLFormElement>) => {
+  const login = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    setError("");
 
-    api
-      .post("/api/auth/signin", Object.fromEntries(data.entries()), {
+    try {
+      const formData = new FormData(e.currentTarget);
+      const payload = Object.fromEntries(formData.entries());
+
+      const res = await api.post("/api/auth/signin", payload, {
         auth: "public",
-      })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.error) {
-          if (data.error == "account_not_verified") {
-            router.push("/verify_otp/" + data.credId);
-            return;
-          }
-          setError((data.error as string).split("_").join(" "));
+      });
+
+      const data = await res.json();
+
+      // Business-logic outcomes (expected states)
+      if (res.status === 409) {
+        if (data.error === "account_not_verified") {
+          router.push("/verify_otp/" + data.credId);
           return;
         }
 
-        setAuth(data.accessToken, data.profile).catch((err) => {
-          console.error(err);
-          throw err;
-        });
-      })
-      .catch((err) => alert(err));
+        if (data.error === "password_login_not_supported") {
+          setError("Use google login or reset password");
+          return;
+        }
+
+        setError(data.error?.split("_").join(" ") || "Login failed");
+        return;
+      }
+
+      // True failures
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      // Success
+      await setAuth(data.accessToken, data.profile);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unexpected error");
+    }
   };
 
   const handleGoogleSignInClick = () => {

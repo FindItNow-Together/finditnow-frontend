@@ -13,7 +13,7 @@ interface ApiOptions extends Omit<RequestInit, "body"> {
 function rewriteUrl(url: string): string {
   if (!url.length) throw new Error("URL cannot be empty");
 
-  url = process.env.NEXT_PUBLIC_APP_URL + url;
+  url = publicBaseUrl + url;
 
   return url;
 }
@@ -22,8 +22,10 @@ export function getBaseUrl(envUrl?: string): string {
   const baseUrl = envUrl ?? "http://localhost";
 
   try {
-    new URL(baseUrl);
-    return baseUrl;
+    if (globalThis.URL?.canParse?.(baseUrl)) {
+      return baseUrl;
+    }
+    throw new Error("Base url incorrect");
   } catch (err) {
     console.error("Invalid BASE_URL provided, falling back to localhost:", err);
     return "http://localhost";
@@ -68,9 +70,13 @@ async function coreRequest(
       .json()
       .catch(() => null);
 
+    if (options.auth === "public") {
+      return response;
+    }
+
     if (
       rewritten.endsWith("logout") ||
-      rewritten.endsWith("refresh") ||
+      // rewritten.endsWith("refresh") ||
       errorBody?.error !== "token_expired"
     ) {
       logout();

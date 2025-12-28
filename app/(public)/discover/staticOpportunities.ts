@@ -13,8 +13,8 @@ export const STATIC_OPPORTUNITIES: Opportunity[] = [
     shop: {
       id: "s1",
       name: "Ramesh Kirana",
-      lat: 18.5204,
-      lng: 73.8567,
+      latitude: 18.5204,
+      longitude: 73.8567,
       deliveryAvailable: true,
     },
     price: 52,
@@ -32,8 +32,8 @@ export const STATIC_OPPORTUNITIES: Opportunity[] = [
     shop: {
       id: "s2",
       name: "City Bakery",
-      lat: 18.5189,
-      lng: 73.8553,
+      latitude: 18.5189,
+      longitude: 73.8553,
       deliveryAvailable: false,
     },
     price: 38,
