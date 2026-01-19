@@ -14,4 +14,6 @@ export type ProductRequest = {
   price: number;
   stock: number;
   category?: string;
+  categoryId?: string;
+  imageUrl?: string;
 };

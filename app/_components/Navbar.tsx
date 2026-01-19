@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSelectedLayoutSegment } from "next/navigatio
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
+import GlobalSearch from "./GlobalSearch";
 
 const accessRoleTabMapping: Record<string, string[]> = {
   CUSTOMER: ["Discover", "Orders"],
@@ -60,12 +61,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* LEFT */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-8 flex-1">
             {/* Logo */}
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
               <span className="text-blue-600">Findit</span>
               <span className="text-green-600">Now</span>
             </Link>
+
+            {/* Global Search */}
+            <GlobalSearch />
 
             {/* Tabs */}
             <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">

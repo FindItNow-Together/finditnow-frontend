@@ -1,6 +1,6 @@
 "use client";
 
-import { LocationMap } from "@/app/_components/Map";
+import LocationMap  from "@/app/_components/Map";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
