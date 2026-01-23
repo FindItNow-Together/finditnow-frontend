@@ -1,32 +1,61 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from "react";
+
+import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+
+export interface CartItem {
+  id: string;
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Cart {
+  id: string;
+  shopId: number;
+  items: CartItem[];
+  subtotal: number;
+}
 
 interface CartContextType {
+  cart: Cart | null;
+  cartId: string | null;
+
+  setCart: (cart: Cart) => void;
+  clearCart: () => void;
+
   itemCount: number;
-  setItemCount: (count: number) => void;
-  addItem: () => void;
-  removeItem: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [itemCount, setItemCount] = useState(0);
+  const [cart, setCartState] = useState<Cart | null>(null);
 
-  const addItem = () => setItemCount((prev) => prev + 1);
-  const removeItem = () => setItemCount((prev) => Math.max(0, prev - 1));
+  const setCart = (c: Cart) => setCartState(c);
+  const clearCart = () => setCartState(null);
+
+  const itemCount = useMemo(() => {
+    return cart?.items.reduce((sum, i) => sum + i.quantity, 0) ?? 0;
+  }, [cart]);
 
   return (
-    <CartContext.Provider value={{ itemCount, setItemCount, addItem, removeItem }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        cartId: cart?.id ?? null,
+        setCart,
+        clearCart,
+        itemCount,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
 }
 
 export function useCart() {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within CartProvider");
-  }
-  return context;
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
 }
