@@ -90,7 +90,9 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .get(`/api/cart/${checkoutCart.id}/pricing`, { auth: "private" })
       .then((res) => (res.ok ? res.json() : null))
       .then(setPricing)
-      .catch(() => {});
+      .catch(() => {
+        setPricing({ deliveryFee: 100, payable: 1100, tax: 1000 });
+      });
   }, [checkoutCart]);
 
   useEffect(() => {
@@ -125,14 +127,15 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     try {
       setStatus("ORDER_CREATING");
 
-      const orderRes = await api.post("/api/orders/from-cart", {
-        auth: "private",
-        body: {
+      const orderRes = await api.post(
+        "/api/orders/from-cart",
+        {
           cartId: checkoutCart.id,
           addressId: selectedAddressId,
           paymentMethod,
         },
-      });
+        { auth: "private" }
+      );
 
       if (!orderRes.ok) throw new Error("Order creation failed");
 
@@ -146,10 +149,11 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
 
       setStatus("PAYMENT_INITIATING");
 
-      const payRes = await api.post("/api/payments/initiate", {
-        auth: "private",
-        body: { orderId: order.id },
-      });
+      const payRes = await api.post(
+        "/api/payments/initiate",
+        { orderId: order.id },
+        { auth: "private" }
+      );
 
       const payment = await payRes.json();
       openRazorpay(payment, order.id);
@@ -164,21 +168,67 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       key: payment.razorpayKey,
       amount: payment.amount,
       order_id: payment.razorpayOrderId,
-      handler: () => pollOrder(orderId),
+      handler: async function (response: any) {
+        // Payment successful, verify via callback
+        console.log("Payment successful, verifying...", response);
+        await handlePaymentCallback(response, orderId);
+      },
+      modal: {
+        ondismiss: function () {
+          // User closed the payment modal
+          console.log("Payment cancelled by user");
+          setStatus("ERROR");
+          setError("Payment cancelled. Please try again.");
+        },
+      },
+      theme: {
+        color: "#3B82F6",
+      },
+    });
+
+    rzp.on("payment.failed", function (response: any) {
+      // Payment failed
+      console.error("Payment failed:", response.error);
+      setStatus("ERROR");
+      setError(response.error.description || "Payment failed. Please try again.");
     });
 
     rzp.open();
   }
 
-  async function pollOrder(orderId: string) {
-    for (;;) {
-      const res = await api.get(`/api/orders/${orderId}`, { auth: "private" });
-      const order = await res.json();
-      if (order.payment_status === "paid") {
-        router.replace(`/orders/${orderId}`);
-        return;
+  async function handlePaymentCallback(response: any, orderId: string) {
+    try {
+      // Call backend to verify signature and update payment status
+      const callbackRes = await api.post(
+        "/api/payments/callback",
+        {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        },
+        { auth: "private" }
+      );
+
+      if (!callbackRes.ok) {
+        const errorData = await callbackRes.json();
+        throw new Error(errorData.error || "Payment verification failed");
       }
-      await new Promise((r) => setTimeout(r, 2000));
+
+      const callbackData = await callbackRes.json();
+
+      if (callbackData.status === "success") {
+        // Payment verified, redirect to order page
+        router.replace(`/orders/${orderId}`);
+      } else {
+        throw new Error(callbackData.error || "Payment verification failed");
+      }
+    } catch (error: any) {
+      console.error("Payment callback error:", error);
+      setStatus("ERROR");
+      setError(
+        error.message ||
+          "Failed to verify payment. Please contact support with order ID: " + orderId
+      );
     }
   }
 
