@@ -24,6 +24,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   const api = useApi();
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
+  const [delivery, setDelivery] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,8 +47,21 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
       }
     };
 
+    const fetchDelivery = async () => {
+      try {
+        const response = await api.get(`/api/deliveries/order/${orderId}`, { auth: "private" });
+        if (response.ok) {
+          const data = await response.json();
+          setDelivery(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch delivery", e);
+      }
+    };
+
     if (orderId) {
       fetchOrder();
+      fetchDelivery();
     }
   }, [api, orderId]);
 
@@ -69,44 +83,53 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     }).format(amount);
   };
 
-  // Dummy delivery updates data
-  const deliveryUpdates = [
-    {
-      status: "Delivered",
-      date: "Expected by tomorrow",
-      completed: false,
-      icon: CheckCircle,
-      description: "Package will be delivered to your address",
-    },
-    {
-      status: "Out for Delivery",
-      date: "Today, 9:00 AM",
-      completed: false,
-      icon: Truck,
-      description: "Agent is on the way to your location",
-    },
-    {
-      status: "Shipped",
-      date: "Yesterday, 4:30 PM",
-      completed: true,
-      icon: Truck,
-      description: "Package has left the facility",
-    },
-    {
-      status: "Packed",
-      date: "Yesterday, 2:00 PM",
-      completed: true,
-      icon: Box,
-      description: "Seller has packed your order",
-    },
-    {
+  // Dynamic delivery updates
+  const deliveryUpdates = [];
+
+  if (order) {
+    deliveryUpdates.push({
       status: "Order Placed",
-      date: "Yesterday, 1:56 PM",
+      date: formatDate(order.createdAt),
       completed: true,
       icon: Package,
       description: "Order has been confirmed",
-    },
-  ];
+    });
+  }
+
+  if (delivery) {
+    const statusMap = {
+      "PENDING": 0,
+      "ASSIGNED": 1,
+      "PICKED_UP": 2,
+      "DELIVERED": 3
+    };
+    const currentLevel = statusMap[delivery.status] ?? 0;
+
+    const steps = [
+      { key: "PENDING", label: "Looking for Agent", desc: "We are assigning a delivery partner" },
+      { key: "ASSIGNED", label: "Agent Assigned", desc: "Partner is on the way to shop" },
+      { key: "PICKED_UP", label: "Out for Delivery", desc: "Agent has picked up your order" },
+      { key: "DELIVERED", label: "Delivered", desc: "Package delivered" }
+    ];
+
+    steps.forEach((step, idx) => {
+      // Only show steps relevant to the flow (simplified)
+      // Or show all and mark completed
+      const isCompleted = idx <= currentLevel;
+      const isCurrent = idx === currentLevel;
+
+      deliveryUpdates.push({
+        status: step.label,
+        date: isCurrent ? "In Progress" : (isCompleted ? "Completed" : "Pending"),
+        completed: isCompleted,
+        icon: isCompleted ? CheckCircle : Truck,
+        description: step.desc
+      });
+    });
+  } else {
+    // Fallback or "Self Pickup" logic could go here
+    // For now, if no delivery record found (maybe just created), show generic
+  }
 
   if (loading) {
     return (
@@ -206,11 +229,10 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
                     return (
                       <div key={index} className="relative">
                         <div
-                          className={`absolute -left-[34px] p-1.5 rounded-full ring-4 ring-white ${
-                            update.completed
+                          className={`absolute -left-[34px] p-1.5 rounded-full ring-4 ring-white ${update.completed
                               ? "bg-green-500 text-white"
                               : "bg-gray-200 text-gray-400"
-                          }`}
+                            }`}
                         >
                           <Icon className="w-4 h-4" />
                         </div>

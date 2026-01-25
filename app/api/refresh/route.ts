@@ -10,5 +10,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "missing_refresh_token" });
   }
 
-  return fetch("http://localhost/api/auth/refresh", { method: "POST" });
+  return fetch("http://localhost:8080/api/auth/refresh", { method: "POST" });
 }

@@ -20,17 +20,8 @@ function rewriteUrl(url: string): string {
 }
 
 export function getBaseUrl(envUrl?: string): string {
-  const baseUrl = envUrl ?? "http://localhost";
-
-  try {
-    if (globalThis.URL?.canParse?.(baseUrl)) {
-      return baseUrl;
-    }
-    throw new Error("Base url incorrect");
-  } catch (err) {
-    console.error("Invalid BASE_URL provided, falling back to localhost:", err);
-    return "http://localhost";
-  }
+  if (typeof window !== "undefined") return "";
+  return envUrl ?? "http://localhost:3000";
 }
 
 export const publicBaseUrl = getBaseUrl(process.env.NEXT_PUBLIC_APP_URL);

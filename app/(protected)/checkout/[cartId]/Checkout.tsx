@@ -35,6 +35,8 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [eta, setEta] = useState<DeliveryETA | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash_on_delivery">("online");
+  const [deliveryType, setDeliveryType] = useState<"PARTNER" | "TAKEAWAY">("PARTNER");
+  const [instructions, setInstructions] = useState("");
   const [status, setStatus] = useState<PageStatus>("LOADING");
   const [error, setError] = useState<string | null>(null);
 
@@ -106,16 +108,32 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   useEffect(() => {
     if (!checkoutCart || !selectedAddressId) return;
 
+    if (deliveryType === "TAKEAWAY") {
+      setPricing(prev => prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null);
+      return;
+    }
+
     setEta(null);
 
+    // Fetch Delivery Quote
     api
-      .get(`/api/delivery/estimate?shopId=${checkoutCart.shopId}&addressId=${selectedAddressId}`, {
+      .get(`/api/orders/quote?shopId=${checkoutCart.shopId}&addressId=${selectedAddressId}`, {
         auth: "private",
       })
       .then((res) => (res.ok ? res.json() : null))
-      .then(setEta)
-      .catch(() => {});
-  }, [selectedAddressId]);
+      .then((data) => {
+        if (data && pricing) {
+          const newFee = data.amount;
+          setPricing(prev => prev ? {
+            ...prev,
+            deliveryFee: newFee,
+            payable: prev.payable - prev.deliveryFee + newFee
+          } : null);
+          setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
+        }
+      })
+      .catch(() => { });
+  }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Re-run when address or delivery type changes
 
   const canPlaceOrder = useMemo(() => {
     return status === "READY" && checkoutCart && pricing && selectedAddressId !== null;
@@ -133,6 +151,8 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
           cartId: checkoutCart.id,
           addressId: selectedAddressId,
           paymentMethod,
+          deliveryType,
+          instructions,
         },
         { auth: "private" }
       );
@@ -227,7 +247,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       setStatus("ERROR");
       setError(
         error.message ||
-          "Failed to verify payment. Please contact support with order ID: " + orderId
+        "Failed to verify payment. Please contact support with order ID: " + orderId
       );
     }
   }
@@ -277,6 +297,52 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         )}
       </section>
 
+      {/* DELIVERY OPTIONS */}
+      <section className="bg-white rounded-lg border border-gray-200 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Options</h2>
+
+        <div className="space-y-3 mb-4">
+          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "PARTNER"}
+              onChange={() => setDeliveryType("PARTNER")}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <span className="font-medium">Standard Delivery</span>
+              <p className="text-sm text-gray-500">Delivered by our partner</p>
+            </div>
+          </label>
+
+          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "TAKEAWAY"}
+              onChange={() => setDeliveryType("TAKEAWAY")}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <span className="font-medium">Self Pickup (Takeaway)</span>
+              <p className="text-sm text-gray-500">Pick up from store</p>
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Instructions</label>
+          <textarea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            placeholder="Where should we leave the package?"
+            className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+            rows={2}
+          />
+        </div>
+      </section>
+
       {/* CART */}
       <section>
         <h2 className="font-semibold mb-2">Order Summary</h2>
@@ -292,6 +358,10 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
 
       {/* TOTAL */}
       <section className="border-t pt-3">
+        <div className="flex justify-between font-semibold">
+          <span>Delivery Fee</span>
+          <span>{pricing.deliveryFee > 0 ? `₹${pricing.deliveryFee}` : "Free"}</span>
+        </div>
         <div className="flex justify-between font-semibold">
           <span>Total</span>
           <span>₹{pricing.payable}</span>
@@ -338,17 +408,15 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
               <button
                 key={address.id}
                 onClick={() => handleAddressSelect(address.id)}
-                className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                  selectedAddressId === address.id
+                className={`w-full text-left p-4 rounded-lg border transition-colors ${selectedAddressId === address.id
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <MapPin
-                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                      selectedAddressId === address.id ? "text-blue-600" : "text-gray-400"
-                    }`}
+                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${selectedAddressId === address.id ? "text-blue-600" : "text-gray-400"
+                      }`}
                   />
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">{address.fullAddress}</p>
