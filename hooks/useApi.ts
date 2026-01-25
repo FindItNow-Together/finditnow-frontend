@@ -196,8 +196,10 @@ export default function useApi() {
       deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),
     },
     productApi: {
-      add: (shopId: number, data: any) => requestJson("POST", `/api/shop/${shopId}/products`, data),
-      getByShop: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/products`),
+      // Product creation is now global, not shop-specific
+      create: (data: any) => requestJson("POST", "/api/shop/products", data),
+      getAll: (query?: string) =>
+        requestJson("GET", query ? `/api/shop/products?query=${encodeURIComponent(query)}` : "/api/shop/products"),
       update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
       delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
       deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
@@ -210,6 +212,19 @@ export default function useApi() {
         requestJson("PUT", `/api/cart/item/${itemId}`, data),
       removeItem: (itemId: string) => requestJson("DELETE", `/api/cart/item/${itemId}`),
       clearCart: (cartId: string) => requestJson("DELETE", `/api/cart/${cartId}/clear`),
+    },
+    categoryApi: {
+      create: (data: any) => requestJson("POST", "/api/categories", data),
+      getByType: (type: string) => requestJson("GET", `/api/categories?type=${type}`),
+    },
+    inventoryApi: {
+      get: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/inventory`),
+      // Add existing product to shop inventory
+      addExisting: (shopId: number, data: any) =>
+        requestJson("POST", `/api/shop/${shopId}/inventory/existing`, data),
+      // Create new product and add to shop inventory
+      addNew: (shopId: number, productData: any, params: { price: number, stock: number }) =>
+        requestJson("POST", `/api/shop/${shopId}/inventory/new?price=${params.price}&stock=${params.stock}`, productData),
     },
   };
 }

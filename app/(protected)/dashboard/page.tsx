@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
-import { Product } from "@/types/product";
+import { InventoryItem } from "@/types/inventory";
 import ShopCard from "@/components/ShopCard";
 import useApi from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
+  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(new Map());
   const [loading, setLoading] = useState(true);
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi } = useApi();
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -25,21 +25,21 @@ export default function DashboardPage() {
       const shops: Shop[] = (await shopApi.getMyShops()) as Shop[];
       setShops(shops || []);
 
-      // Load products for each shop
-      const productsMap = new Map<number, Product[]>();
+      // Load inventory for each shop
+      const inventoryMap = new Map<number, InventoryItem[]>();
       await Promise.all(
         shops.map(async (shop) => {
           try {
-            const products = (await productApi.getByShop(shop.id)) as Product[];
-            productsMap.set(shop.id, products);
+            const inventory = (await inventoryApi.get(shop.id)) as InventoryItem[];
+            inventoryMap.set(shop.id, inventory);
           } catch (err) {
-            console.error(`Failed to load products for shop ${shop.id}`, err);
-            productsMap.set(shop.id, []);
+            console.error(`Failed to load inventory for shop ${shop.id}`, err);
+            inventoryMap.set(shop.id, []);
           }
         })
       );
 
-      setShopsWithProducts(productsMap);
+      setShopsWithInventory(inventoryMap);
     } catch (err: any) {
       setError("Failed to load shops");
     } finally {
@@ -61,15 +61,15 @@ export default function DashboardPage() {
         shop.address.toLowerCase().includes(query) ||
         shop.phone.toLowerCase().includes(query);
 
-      // Search in product names
-      const products = shopsWithProducts.get(shop.id) || [];
-      const matchesProducts = products.some((product) =>
-        product.name.toLowerCase().includes(query)
+      // Search in product names from inventory
+      const inventory = shopsWithInventory.get(shop.id) || [];
+      const matchesProducts = inventory.some((item) =>
+        item.product.name.toLowerCase().includes(query)
       );
 
       return matchesShop || matchesProducts;
     });
-  }, [shops, searchQuery, shopsWithProducts]);
+  }, [shops, searchQuery, shopsWithInventory]);
 
   if (loading) {
     return <div className="container">Loading shops...</div>;
@@ -164,14 +164,14 @@ export default function DashboardPage() {
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           {filteredShops.map((shop) => {
-            const products = shopsWithProducts.get(shop.id) || [];
-            const topProducts = products.map((p) => p.name);
+            const inventory = shopsWithInventory.get(shop.id) || [];
+            const topProducts = inventory.map((item) => item.product.name);
 
             return (
               <ShopCard
                 key={shop.id}
                 shop={shop}
-                productCount={products.length}
+                productCount={inventory.length}
                 topProducts={topProducts}
               />
             );

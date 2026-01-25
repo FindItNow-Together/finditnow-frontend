@@ -1,11 +1,12 @@
 "use client";
 
-import { LocationMap } from "@/app/_components/Map";
+import LocationMap from "@/app/_components/Map";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreateableSelect from "@/components/CreateableSelect";
 
 export default function RegisterShopPage() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function RegisterShopPage() {
     deliveryOption: "PICKUP",
     ownerId: "",
   });
+
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(null);
 
   // Automatically fetch initial location
   useEffect(() => {
@@ -46,7 +49,12 @@ export default function RegisterShopPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await shopApi.register(formData);
+      const payload = {
+        ...formData,
+        categoryId: selectedCategory ? parseInt(selectedCategory.value) : undefined,
+      };
+
+      await shopApi.register(payload);
       if (accessRole == "ADMIN") {
         router.push("/admin/dashboard");
       } else {
@@ -76,6 +84,16 @@ export default function RegisterShopPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <CreateableSelect
+              type="SHOP"
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              placeholder="Select or create a shop category..."
             />
           </div>
 
