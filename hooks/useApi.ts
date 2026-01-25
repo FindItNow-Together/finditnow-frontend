@@ -19,7 +19,7 @@ function rewriteUrl(url: string): string {
 }
 
 export function getBaseUrl(envUrl?: string): string {
-  const baseUrl = envUrl ?? "http://localhost";
+  const baseUrl = envUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost";
 
   try {
     if (globalThis.URL?.canParse?.(baseUrl)) {
@@ -201,6 +201,15 @@ export default function useApi() {
       update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
       delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
       deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
+    },
+    cartApi: {
+      getCart: (userId: string, shopId: string) =>
+        requestJson("GET", `/api/cart/user/${userId}/shop/${shopId}`),
+      addItem: (data: any) => requestJson("POST", "/api/cart/add", data),
+      updateItem: (itemId: string, data: any) =>
+        requestJson("PUT", `/api/cart/item/${itemId}`, data),
+      removeItem: (itemId: string) => requestJson("DELETE", `/api/cart/item/${itemId}`),
+      clearCart: (cartId: string) => requestJson("DELETE", `/api/cart/${cartId}/clear`),
     },
   };
 }

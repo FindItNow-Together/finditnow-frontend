@@ -63,8 +63,8 @@ export default function Navbar() {
           <div className="flex items-center gap-8">
             {/* Logo */}
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
-              <span className="text-blue-600">Findit</span>
-              <span className="text-green-600">Now</span>
+              <span className="text-blue-600">Find It</span>
+              <span className="text-green-600"> Now</span>
             </Link>
 
             {/* Tabs */}
@@ -78,7 +78,7 @@ export default function Navbar() {
                     key={tab}
                     href={href}
                     className={[
-                      "px-4 py-1.5 text-sm font-medium rounded-full transition-all",
+                      "px-4 py-1.5 text-sm font-medium rounded-lg transition-all",
                       isActive
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900 hover:bg-white",
@@ -97,15 +97,11 @@ export default function Navbar() {
             {isAuthenticated && (
               <button
                 onClick={() => router.push("/cart")}
-                className="relative p-2 rounded-full hover:bg-gray-100 transition"
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ShoppingCart className="h-5 w-5 text-gray-700" />
                 {itemCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
-                               rounded-full bg-blue-600 text-white text-xs
-                               flex items-center justify-center px-1"
-                  >
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-600 text-white text-xs flex items-center justify-center px-1">
                     {itemCount}
                   </span>
                 )}
@@ -115,9 +111,7 @@ export default function Navbar() {
             {/* Profile */}
             <div className="relative group">
               <button
-                className="flex items-center justify-center w-9 h-9
-                           rounded-full bg-gradient-to-br from-blue-600 to-indigo-600
-                           text-white font-semibold shadow-sm hover:shadow-md transition"
+                className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-colors"
               >
                 {isAuthenticated && userData?.profileUrl ? (
                   <img
@@ -131,10 +125,7 @@ export default function Navbar() {
               </button>
 
               <div
-                className="absolute right-0 mt-2 w-40
-                           bg-white border border-gray-200 rounded-lg shadow-lg
-                           opacity-0 invisible group-hover:opacity-100
-                           group-hover:visible transition-all"
+                className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
               >
                 <div className="py-1 text-sm">
                   {isAuthenticated && (
