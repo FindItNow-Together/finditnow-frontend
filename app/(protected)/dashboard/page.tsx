@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
+import { Shop, PagedResponse } from "@/types/shop";
 import { Product } from "@/types/product";
 import ShopCard from "@/components/ShopCard";
 import useApi from "@/hooks/useApi";
@@ -11,7 +11,7 @@ export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
   const [loading, setLoading] = useState(true);
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi } = useApi();
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -22,18 +22,28 @@ export default function DashboardPage() {
 
   const loadShops = async () => {
     try {
-      const shops: Shop[] = (await shopApi.getMyShops()) as Shop[];
-      setShops(shops || []);
+      const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
-      // Load products for each shop
+      // Load inventory for each shop to get products
       const productsMap = new Map<number, Product[]>();
       await Promise.all(
-        shops.map(async (shop) => {
+        shopsList.map(async (shop) => {
           try {
-            const products = (await productApi.getByShop(shop.id)) as Product[];
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as any[];
+            // Extract products from inventory
+            const products = inventory.map((inv: any) => ({
+              id: inv.product?.id || 0,
+              name: inv.product?.name || "",
+              description: inv.product?.description,
+              imageUrl: inv.product?.imageUrl,
+              category: inv.product?.category,
+            }));
             productsMap.set(shop.id, products);
           } catch (err) {
-            console.error(`Failed to load products for shop ${shop.id}`, err);
+            console.error(`Failed to load inventory for shop ${shop.id}`, err);
             productsMap.set(shop.id, []);
           }
         })
@@ -42,6 +52,7 @@ export default function DashboardPage() {
       setShopsWithProducts(productsMap);
     } catch (err: any) {
       setError("Failed to load shops");
+      console.error("Error loading shops:", err);
     } finally {
       setLoading(false);
     }

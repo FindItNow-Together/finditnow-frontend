@@ -26,7 +26,7 @@ export default function ShopDetailsPage() {
   const params = useParams();
   const shopId = params?.id ? Number(params.id) : null;
 
-  const { productApi, shopApi } = useApi();
+  const { productApi, shopApi, inventoryApi } = useApi();
 
   const [shop, setShop] = useState<Shop | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -66,11 +66,25 @@ export default function ShopDetailsPage() {
     if (!shopId) return;
 
     try {
-      const prods = (await productApi.getByShop(shopId)) as Product[];
-      setProducts(prods);
+      // Get inventory which contains products with shop-specific data (price, stock)
+      const inventory = (await inventoryApi.getShopInventory(shopId)) as any[];
+      // Map inventory to products with shop-specific data
+      const prods = inventory.map((inv: any) => ({
+        id: inv.product?.id || 0,
+        name: inv.product?.name || "",
+        description: inv.product?.description,
+        imageUrl: inv.product?.imageUrl,
+        category: inv.product?.category,
+        price: inv.price,
+        stock: inv.stock,
+        reservedStock: inv.reservedStock,
+        inventoryId: inv.id,
+      }));
+      setProducts(prods as any);
       setSelectedProducts(new Set()); // Clear selection on reload
     } catch (err: any) {
       setError("Failed to load products");
+      console.error("Error loading products:", err);
     }
   };
 

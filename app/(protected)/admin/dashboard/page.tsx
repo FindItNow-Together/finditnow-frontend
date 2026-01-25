@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
+import { Shop, PagedResponse } from "@/types/shop";
 import { Product } from "@/types/product";
 import ShopCard from "@/components/ShopCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const { accessRole, setAccessRole, setAccessToken, logout } = useAuth();
   const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi } = useApi();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +24,24 @@ export default function AdminDashboardPage() {
 
   const loadAllShops = async () => {
     try {
-      const shops = (await shopApi.getAllShops()) as Shop[];
-      setShops(shops);
+      const response = (await shopApi.getAllShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
       const productsMap = new Map<number, Product[]>();
       await Promise.all(
-        shops.map(async (shop) => {
+        shopsList.map(async (shop) => {
           try {
-            const products = (await productApi.getByShop(shop.id)) as Product[];
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as any[];
+            // Extract products from inventory
+            const products = inventory.map((inv: any) => ({
+              id: inv.product?.id || 0,
+              name: inv.product?.name || "",
+              description: inv.product?.description,
+              imageUrl: inv.product?.imageUrl,
+              category: inv.product?.category,
+            }));
             productsMap.set(shop.id, products);
           } catch {
             productsMap.set(shop.id, []);
@@ -40,8 +50,9 @@ export default function AdminDashboardPage() {
       );
 
       setShopsWithProducts(productsMap);
-    } catch {
+    } catch (err: any) {
       setError("Failed to load shops");
+      console.error("Error loading shops:", err);
     } finally {
       setLoading(false);
     }

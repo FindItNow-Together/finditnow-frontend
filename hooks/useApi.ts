@@ -205,20 +205,50 @@ export default function useApi() {
 
       // Expose Domain Logic (from api.ts)
       shopApi: {
-        register: (data: any) => requestJson("POST", "/api/shop/add", data),
-        getMyShops: () => requestJson("GET", "/api/shop/mine"),
-        getAllShops: () => requestJson("GET", "/api/shop/all"),
-        getShop: (id: number) => requestJson("GET", `/api/shop/${id}`),
-        delete: (id: number) => requestJson("DELETE", `/api/shop/${id}`),
-        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),
+        register: (data: any) => requestJson("POST", "/api/v1/shops/add", data),
+        getMyShops: (page = 0, size = 10) => 
+          requestJson("GET", `/api/v1/shops/mine?page=${page}&size=${size}`),
+        getAllShops: (page = 0, size = 10) => 
+          requestJson("GET", `/api/v1/shops/all?page=${page}&size=${size}`),
+        getShop: (id: number) => requestJson("GET", `/api/v1/shops/${id}`),
+        updateShop: (id: number, data: any) => requestJson("PUT", `/api/v1/shops/${id}`, data),
+        delete: (id: number) => requestJson("DELETE", `/api/v1/shops/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/v1/shops/bulk", ids),
+        search: (params: { name?: string; deliveryOption?: string; lat?: number; lng?: number; page?: number; size?: number }) => {
+          const queryParams = new URLSearchParams();
+          if (params.name) queryParams.append("name", params.name);
+          if (params.deliveryOption) queryParams.append("deliveryOption", params.deliveryOption);
+          if (params.lat) queryParams.append("lat", params.lat.toString());
+          if (params.lng) queryParams.append("lng", params.lng.toString());
+          queryParams.append("page", (params.page || 0).toString());
+          queryParams.append("size", (params.size || 10).toString());
+          return requestJson("GET", `/api/v1/shops/search?${queryParams.toString()}`);
+        },
+      },
+      inventoryApi: {
+        getShopInventory: (shopId: number) => 
+          requestJson("GET", `/api/v1/shops/${shopId}/inventory`),
+        getInventory: (id: number) => 
+          requestJson("GET", `/api/v1/inventory/${id}`),
+        addInventory: (shopId: number, data: any) => 
+          requestJson("POST", `/api/v1/shops/${shopId}/inventory`, data),
+        updateInventory: (id: number, data: any) => 
+          requestJson("PUT", `/api/v1/inventory/${id}`, data),
+        deleteInventory: (id: number) => 
+          requestJson("DELETE", `/api/v1/inventory/${id}`),
+        reserveStock: (id: number, quantity: number) => 
+          requestJson("POST", `/api/v1/inventory/${id}/reserve?quantity=${quantity}`),
+        releaseStock: (id: number, quantity: number) => 
+          requestJson("POST", `/api/v1/inventory/${id}/release?quantity=${quantity}`),
       },
       productApi: {
-        add: (shopId: number, data: any) =>
-          requestJson("POST", `/api/shop/${shopId}/products`, data),
-        getByShop: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/products`),
-        update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
-        delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
-        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
+        add: (data: any) => requestJson("POST", "/api/v1/products", data),
+        getAll: (page = 0, size = 10) => 
+          requestJson("GET", `/api/v1/products?page=${page}&size=${size}`),
+        getById: (id: number) => requestJson("GET", `/api/v1/products/${id}`),
+        update: (id: number, data: any) => requestJson("PUT", `/api/v1/products/${id}`, data),
+        delete: (id: number) => requestJson("DELETE", `/api/v1/products/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/v1/products/bulk", ids),
       },
     }),
     [get, post, put, del, requestJson]

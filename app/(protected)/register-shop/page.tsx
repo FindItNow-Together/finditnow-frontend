@@ -21,8 +21,8 @@ export default function RegisterShopPage() {
     latitude: 51.505 as number, // Default fallback
     longitude: -0.09 as number,
     openHours: "",
-    deliveryOption: "PICKUP",
-    ownerId: "",
+    deliveryOption: "NO_DELIVERY" as "NO_DELIVERY" | "IN_HOUSE_DRIVER" | "THIRD_PARTY_PARTNER",
+    categoryId: undefined as number | undefined,
   });
 
   // Automatically fetch initial location
@@ -138,11 +138,11 @@ export default function RegisterShopPage() {
             <select
               className="w-full px-4 py-2 border rounded-lg mt-1"
               value={formData.deliveryOption}
-              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value as any })}
             >
-              <option value="PICKUP">Pickup Only</option>
-              <option value="DELIVERY">Delivery Only</option>
-              <option value="BOTH">Both</option>
+              <option value="NO_DELIVERY">No Delivery (Pickup Only)</option>
+              <option value="IN_HOUSE_DRIVER">In-House Delivery Driver</option>
+              <option value="THIRD_PARTY_PARTNER">Third Party Delivery Partner</option>
             </select>
           </div>
 

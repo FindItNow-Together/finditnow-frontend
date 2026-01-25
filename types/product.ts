@@ -1,17 +1,17 @@
+import { Category } from "./shop";
+
 export type Product = {
   id: number;
-  shopId: number;
   name: string;
   description?: string;
-  price: number;
-  stock: number;
-  category?: string;
+  imageUrl?: string;
+  category?: Category;
 };
 
 export type ProductRequest = {
   name: string;
   description?: string;
-  price: number;
-  stock: number;
-  category?: string;
+  imageUrl?: string;
+  categoryId?: string;
+  category?: string; // Alternative to categoryId
 };
