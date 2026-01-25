@@ -10,6 +10,7 @@ import OverviewSection from "./_components/Overview";
 import PastDeliveriesSection from "./_components/PastDeliveries";
 import ProfileSection from "./_components/ProfileSection";
 import { ShopsSection } from "./_components/ShopsSection";
+import { OrderResponse } from "@/types/order";
 
 type UserRole = "CUSTOMER" | "SHOP" | "DELIVERY_AGENT";
 
@@ -31,6 +32,12 @@ export default function Profile() {
   const { accessRole: role, userData, setUserData } = useAuth();
   // const api = useApi();
   const [activeTab, setActiveTab] = useState<string>("overview");
+
+  const [orders, setOrders] = useState<OrderResponse[] | null>(null);
+
+  const handleOrdersLoad = (loadedOrders: OrderResponse[]) => {
+    setOrders(loadedOrders);
+  };
 
   const tabs = React.useMemo(
     () => [...baseTabs, ...(roleTabs[(role as UserRole) || "CUSTOMER"] || [])],
@@ -125,7 +132,9 @@ export default function Profile() {
           {/* Main Content */}
           <main className="flex-1 space-y-4">
             {activeTab === "overview" && <OverviewSection />}
-            {activeTab === "orders" && <OrdersSection />}
+            {activeTab === "orders" && (
+              <OrdersSection orders={orders} onOrdersLoad={handleOrdersLoad} />
+            )}
             {activeTab === "profile" && (
               <ProfileSection userData={userData} setUserData={setUserData} />
             )}
