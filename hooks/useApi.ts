@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { URL } from "node:url";
 
@@ -120,87 +121,108 @@ export default function useApi() {
 
   // --- GENERIC METHODS (The ones you were looking for) ---
 
-  const get = (url: string, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "GET" },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const get = useCallback(
+    (url: string, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "GET" },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const post = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "POST", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const post = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "POST", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const put = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "PUT", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const put = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "PUT", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const del = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "DELETE", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const del = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "DELETE", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
   // Helper for JSON parsing to keep the domain APIs clean
-  const requestJson = async <T>(
-    method: string,
-    url: string,
-    body?: any,
-    auth: ApiAccess = "private"
-  ): Promise<T> => {
-    const res = await coreRequest(
-      url,
-      { method, body, auth },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-    return res.json();
-  };
-
-  return {
-    // Expose raw methods
-    get,
-    post,
-    put,
-    del,
-
-    // Expose Domain Logic (from api.ts)
-    shopApi: {
-      register: (data: any) => requestJson("POST", "/api/shop/add", data),
-      getMyShops: () => requestJson("GET", "/api/shop/mine"),
-      getAllShops: () => requestJson("GET", "/api/shop/all"),
-      getShop: (id: number) => requestJson("GET", `/api/shop/${id}`),
-      delete: (id: number) => requestJson("DELETE", `/api/shop/${id}`),
-      deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),
+  const requestJson = useCallback(
+    async <T>(
+      method: string,
+      url: string,
+      body?: any,
+      auth: ApiAccess = "private"
+    ): Promise<T> => {
+      const res = await coreRequest(
+        url,
+        { method, body, auth },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      );
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      return res.json();
     },
-    productApi: {
-      add: (shopId: number, data: any) => requestJson("POST", `/api/shop/${shopId}/products`, data),
-      getByShop: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/products`),
-      update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
-      delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
-      deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
-    },
-  };
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
+
+  const api = useMemo(
+    () => ({
+      // Expose raw methods
+      get,
+      post,
+      put,
+      del,
+
+      // Expose Domain Logic (from api.ts)
+      shopApi: {
+        register: (data: any) => requestJson("POST", "/api/shop/add", data),
+        getMyShops: () => requestJson("GET", "/api/shop/mine"),
+        getAllShops: () => requestJson("GET", "/api/shop/all"),
+        getShop: (id: number) => requestJson("GET", `/api/shop/${id}`),
+        delete: (id: number) => requestJson("DELETE", `/api/shop/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),
+      },
+      productApi: {
+        add: (shopId: number, data: any) =>
+          requestJson("POST", `/api/shop/${shopId}/products`, data),
+        getByShop: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/products`),
+        update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
+        delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
+      },
+    }),
+    [get, post, put, del, requestJson]
+  );
+
+  return api;
 }
