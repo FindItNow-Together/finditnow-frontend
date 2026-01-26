@@ -120,111 +120,158 @@ export default function useApi() {
 
   // --- GENERIC METHODS (The ones you were looking for) ---
 
-  const get = (url: string, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "GET" },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const get = useCallback(
+    (url: string, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "GET" },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const post = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "POST", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const post = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "POST", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const put = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "PUT", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const put = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "PUT", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  const del = (url: string, body?: any, options: ApiOptions = {}) =>
-    coreRequest(
-      url,
-      { ...options, method: "DELETE", body },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
+  const del = useCallback(
+    (url: string, body?: any, options: ApiOptions = {}) =>
+      coreRequest(
+        url,
+        { ...options, method: "DELETE", body },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      ),
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
   // Helper for JSON parsing to keep the domain APIs clean
-  const requestJson = async <T>(
-    method: string,
-    url: string,
-    body?: any,
-    auth: ApiAccess = "private"
-  ): Promise<T> => {
-    const res = await coreRequest(
-      url,
-      { method, body, auth },
-      accessToken,
-      setAccessToken,
-      setAccessRole,
-      logout
-    );
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-    return res.json();
-  };
+  const requestJson = useCallback(
+    async <T>(
+      method: string,
+      url: string,
+      body?: any,
+      auth: ApiAccess = "private"
+    ): Promise<T> => {
+      const res = await coreRequest(
+        url,
+        { method, body, auth },
+        accessToken,
+        setAccessToken,
+        setAccessRole,
+        logout
+      );
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      return res.json();
+    },
+    [accessToken, setAccessToken, setAccessRole, logout]
+  );
 
-  return {
-    // Expose raw methods
-    get,
-    post,
-    put,
-    del,
+  const api = useMemo(
+    () => ({
+      // Expose raw methods
+      get,
+      post,
+      put,
+      del,
 
-    // Expose Domain Logic (from api.ts)
-    shopApi: {
-      register: (data: any) => requestJson("POST", "/api/shop/add", data),
-      getMyShops: () => requestJson("GET", "/api/shop/mine"),
-      getAllShops: () => requestJson("GET", "/api/shop/all"),
-      getShop: (id: number) => requestJson("GET", `/api/shop/${id}`),
-      delete: (id: number) => requestJson("DELETE", `/api/shop/${id}`),
-      deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),
-    },
-    productApi: {
-      // Product creation is now global, not shop-specific
-      create: (data: any) => requestJson("POST", "/api/shop/products", data),
-      getAll: (query?: string) =>
-        requestJson("GET", query ? `/api/shop/products?query=${encodeURIComponent(query)}` : "/api/shop/products"),
-      update: (id: number, data: any) => requestJson("PUT", `/api/shop/products/${id}`, data),
-      delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
-      deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
-    },
-    cartApi: {
-      getCart: (userId: string, shopId: string) =>
-        requestJson("GET", `/api/cart/user/${userId}/shop/${shopId}`),
-      addItem: (data: any) => requestJson("POST", "/api/cart/add", data),
-      updateItem: (itemId: string, data: any) =>
-        requestJson("PUT", `/api/cart/item/${itemId}`, data),
-      removeItem: (itemId: string) => requestJson("DELETE", `/api/cart/item/${itemId}`),
-      clearCart: (cartId: string) => requestJson("DELETE", `/api/cart/${cartId}/clear`),
-    },
-    categoryApi: {
-      create: (data: any) => requestJson("POST", "/api/categories", data),
-      getByType: (type: string) => requestJson("GET", `/api/categories?type=${type}`),
-    },
-    inventoryApi: {
-      get: (shopId: number) => requestJson("GET", `/api/shop/${shopId}/inventory`),
-      // Add existing product to shop inventory
-      addExisting: (shopId: number, data: any) =>
-        requestJson("POST", `/api/shop/${shopId}/inventory/existing`, data),
-      // Create new product and add to shop inventory
-      addNew: (shopId: number, productData: any, params: { price: number, stock: number }) =>
-        requestJson("POST", `/api/shop/${shopId}/inventory/new?price=${params.price}&stock=${params.stock}`, productData),
-    },
-  };
+      // Expose Domain Logic (from api.ts)
+      shopApi: {
+        register: (data: any) => requestJson("POST", "/api/v1/shops/add", data),
+        getMyShops: (page = 0, size = 10) =>
+          requestJson("GET", `/api/v1/shops/mine?page=${page}&size=${size}`),
+        getAllShops: (page = 0, size = 10) =>
+          requestJson("GET", `/api/v1/shops/all?page=${page}&size=${size}`),
+        getShop: (id: number) => requestJson("GET", `/api/v1/shops/${id}`),
+        updateShop: (id: number, data: any) => requestJson("PUT", `/api/v1/shops/${id}`, data),
+        delete: (id: number) => requestJson("DELETE", `/api/v1/shops/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/v1/shops/bulk", ids),
+        search: (params: {
+          name?: string;
+          deliveryOption?: string;
+          lat?: number;
+          lng?: number;
+          page?: number;
+          size?: number;
+        }) => {
+          const queryParams = new URLSearchParams();
+          if (params.name) queryParams.append("name", params.name);
+          if (params.deliveryOption) queryParams.append("deliveryOption", params.deliveryOption);
+          if (params.lat) queryParams.append("lat", params.lat.toString());
+          if (params.lng) queryParams.append("lng", params.lng.toString());
+          queryParams.append("page", (params.page || 0).toString());
+          queryParams.append("size", (params.size || 10).toString());
+          return requestJson("GET", `/api/v1/shops/search?${queryParams.toString()}`);
+        },
+      },
+      inventoryApi: {
+        getShopInventory: (shopId: number) =>
+          requestJson("GET", `/api/v1/shops/${shopId}/inventory`),
+        getInventory: (id: number) =>
+          requestJson("GET", `/api/v1/inventory/${id}`),
+        addInventory: (shopId: number, data: any) =>
+          requestJson("POST", `/api/v1/shops/${shopId}/inventory`, data),
+        updateInventory: (id: number, data: any) =>
+          requestJson("PUT", `/api/v1/inventory/${id}`, data),
+        deleteInventory: (id: number) =>
+          requestJson("DELETE", `/api/v1/inventory/${id}`),
+        reserveStock: (id: number, quantity: number) =>
+          requestJson("POST", `/api/v1/inventory/${id}/reserve?quantity=${quantity}`),
+        releaseStock: (id: number, quantity: number) =>
+          requestJson("POST", `/api/v1/inventory/${id}/release?quantity=${quantity}`),
+      },
+      cartApi: {
+        getCart: (userId: string, shopId: string) =>
+          requestJson("GET", `/api/cart/user/${userId}/shop/${shopId}`),
+        addItem: (data: any) => requestJson("POST", "/api/cart/add", data),
+        updateItem: (itemId: string, data: any) =>
+          requestJson("PUT", `/api/cart/item/${itemId}`, data),
+        removeItem: (itemId: string) => requestJson("DELETE", `/api/cart/item/${itemId}`),
+        clearCart: (cartId: string) => requestJson("DELETE", `/api/cart/${cartId}/clear`),
+      },
+      categoryApi: {
+        create: (data: any) => requestJson("POST", "/api/categories", data),
+        getByType: (type: string) => requestJson("GET", `/api/categories?type=${type}`),
+      },
+      productApi: {
+        add: (data: any) => requestJson("POST", "/api/v1/products", data),
+        getAll: (page = 0, size = 10) =>
+          requestJson("GET", `/api/v1/products?page=${page}&size=${size}`),
+        getById: (id: number) => requestJson("GET", `/api/v1/products/${id}`),
+        update: (id: number, data: any) => requestJson("PUT", `/api/v1/products/${id}`, data),
+        delete: (id: number) => requestJson("DELETE", `/api/v1/products/${id}`),
+        deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/v1/products/bulk", ids),
+      },
+    }),
+    [get, post, put, del, requestJson]
+  );
+
+  return api;
 }

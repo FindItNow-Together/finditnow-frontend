@@ -10,6 +10,7 @@ import OverviewSection from "./_components/Overview";
 import PastDeliveriesSection from "./_components/PastDeliveries";
 import ProfileSection from "./_components/ProfileSection";
 import { ShopsSection } from "./_components/ShopsSection";
+import { OrderResponse } from "@/types/order";
 
 type UserRole = "CUSTOMER" | "SHOP" | "DELIVERY_AGENT";
 
@@ -32,6 +33,12 @@ export default function Profile() {
   // const api = useApi();
   const [activeTab, setActiveTab] = useState<string>("overview");
 
+  const [orders, setOrders] = useState<OrderResponse[] | null>(null);
+
+  const handleOrdersLoad = (loadedOrders: OrderResponse[]) => {
+    setOrders(loadedOrders);
+  };
+
   const tabs = React.useMemo(
     () => [...baseTabs, ...(roleTabs[(role as UserRole) || "CUSTOMER"] || [])],
     [role]
@@ -52,30 +59,30 @@ export default function Profile() {
   // }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <aside className="w-full lg:w-64 shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:sticky lg:h-fit lg:top-8">
+          <aside className="w-full lg:w-64 shrink-0 bg-white rounded-lg border border-gray-200 p-5 lg:sticky lg:h-fit lg:top-8">
             {/* Profile Header */}
-            <div className="mb-8 text-center lg:mb-10">
+            <div className="mb-8 text-center">
               <div className="relative mx-auto h-20 w-20 mb-4">
                 {userData?.profileUrl ? (
                   <img
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
                     alt="Profile"
-                    className="h-full w-full rounded-2xl object-cover ring-2 ring-gray-200 dark:ring-gray-600"
+                    className="h-full w-full rounded-lg object-cover border-2 border-gray-200"
                   />
                 ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 ring-2 ring-gray-200 dark:ring-gray-600">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-100 text-gray-500 border-2 border-gray-200">
                     <User2 className="h-10 w-10" />
                   </div>
                 )}
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {userData?.firstName || "User"}
               </h3>
-              {/* <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{role || "customer"}</p> */}
+              {/* <p className="text-sm text-gray-500 capitalize">{role || "customer"}</p> */}
             </div>
 
             {/* Navigation */}
@@ -89,16 +96,16 @@ export default function Profile() {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                                            flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-200
-                                            ${
-                                              isActive
-                                                ? "bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100 border border-transparent"
-                                            }
-                                        `}
+                      flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+                      ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                      }
+                    `}
                   >
                     <Icon
-                      className={`h-5 w-5 shrink-0 ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}
+                      className={`h-5 w-5 shrink-0 ${isActive ? "text-blue-600" : "text-gray-400"}`}
                     />
                     <span>{tab.label}</span>
                   </button>
@@ -107,27 +114,27 @@ export default function Profile() {
             </nav>
 
             {/* Future sections */}
-            <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
                 Coming soon
               </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 group">
-                  <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20">
-                    <Bell className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-blue-50">
+                    <Bell className="h-4 w-4 text-gray-400 group-hover:text-blue-600" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Notifications
-                  </span>
+                  <span className="text-sm font-medium text-gray-600">Notifications</span>
                 </div>
               </div>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 space-y-6 lg:space-y-8">
+          <main className="flex-1 space-y-4">
             {activeTab === "overview" && <OverviewSection />}
-            {activeTab === "orders" && <OrdersSection />}
+            {activeTab === "orders" && (
+              <OrdersSection orders={orders} onOrdersLoad={handleOrdersLoad} />
+            )}
             {activeTab === "profile" && (
               <ProfileSection userData={userData} setUserData={setUserData} />
             )}

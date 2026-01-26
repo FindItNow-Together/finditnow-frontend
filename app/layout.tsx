@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -9,6 +9,7 @@ import { User, UserRole } from "@/types/user";
 import { cookies } from "next/headers";
 
 import { URL } from "node:url";
+import Script from "next/script";
 
 export function getBaseUrl(envUrl?: string): string {
   const baseUrl = envUrl ?? "http://localhost";
@@ -24,10 +25,14 @@ export function getBaseUrl(envUrl?: string): string {
 
 const internalBaseUrl = getBaseUrl(process.env.INTERNAL_BASE_URL);
 
-const inter = Inter({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -90,7 +95,8 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <AuthProvider auth={auth}>
           <CartProvider>
             <Navbar />

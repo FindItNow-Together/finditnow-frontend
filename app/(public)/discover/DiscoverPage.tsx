@@ -28,7 +28,7 @@ export default function DiscoverClient() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}
+      () => { }
     );
   }, []);
 

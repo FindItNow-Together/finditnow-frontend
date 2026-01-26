@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
-import { Shop } from "@/types/shop";
+import { Shop, PagedResponse } from "@/types/shop";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -81,10 +81,12 @@ export default function DeleteShopsPage() {
   const loadShops = async () => {
     try {
       // Call the API to get all shops owned by the current user
-      const shops = (await shopApi.getMyShops()) as Shop[];
+      const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
 
       // Update the shops state with the fetched data
-      setShops(shops);
+      setShops(shopsList);
 
       // Clear any previous errors
       setError(null);

@@ -1,33 +1,43 @@
 "use client";
-import { CreditCard, ShoppingBag } from "lucide-react";
+import { CreditCard, MapPin, ShoppingBag } from "lucide-react";
 
 export default function OverviewSection() {
   return (
-    <section className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Overview</h2>
-        <div className="grid gap-6 lg:grid-cols-3">
+    <section className="space-y-4">
+      <div className="bg-white rounded-lg p-6 border border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Overview</h2>
+        <div className="grid gap-4 lg:grid-cols-3">
           {[
-            { label: "Total Orders", value: "24", change: "+12%", color: "blue" },
-            { label: "Saved Cards", value: "3", icon: CreditCard },
-            { label: "Addresses", value: "2", change: "+1", color: "emerald" },
-          ].map(({ label, value, change, color }, i) => (
+            {
+              label: "Total Orders",
+              value: "24",
+              change: "+12%",
+              icon: ShoppingBag,
+              color: "blue",
+            },
+            { label: "Saved Cards", value: "3", icon: CreditCard, color: "purple" },
+            { label: "Addresses", value: "2", change: "+1", icon: MapPin, color: "emerald" },
+          ].map(({ label, value, change, icon: Icon, color }, i) => (
             <div
               key={i}
-              className="group border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow duration-200"
+              className="border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-colors"
             >
               <div className="flex items-start justify-between">
-                <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
-                  <ShoppingBag className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                <div className="p-2.5 bg-gray-50 rounded-lg">
+                  <Icon className="h-5 w-5 text-gray-500" />
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                    {label}
-                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                  <p className="text-sm text-gray-600 mt-1">{label}</p>
                   {change && (
                     <p
-                      className={`text-sm font-semibold mt-1 ${color === "emerald" ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}`}
+                      className={`text-sm font-medium mt-1 ${
+                        color === "emerald"
+                          ? "text-emerald-600"
+                          : color === "blue"
+                            ? "text-blue-600"
+                            : "text-purple-600"
+                      }`}
                     >
                       {change}
                     </p>

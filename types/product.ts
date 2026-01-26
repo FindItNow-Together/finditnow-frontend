@@ -10,11 +10,10 @@ export type Product = {
   imageUrl?: string;
 };
 
-// Matches backend ProductRequest DTO
 export type ProductRequest = {
   name: string;
   description?: string;
-  category?: string; // name
-  categoryId?: string; // ID
   imageUrl?: string;
+  categoryId?: string;
+  category?: string; // Alternative to categoryId
 };

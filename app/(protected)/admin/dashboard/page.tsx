@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
+import { Shop, PagedResponse } from "@/types/shop";
 import { InventoryItem } from "@/types/inventory";
 import ShopCard from "@/components/ShopCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,8 +10,10 @@ import useApi from "@/hooks/useApi";
 
 export default function AdminDashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const { accessRole, setAccessRole, setAccessToken, logout } = useAuth();
-  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(new Map());
+  const { logout } = useAuth();
+  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(
+    new Map()
+  );
   const { inventoryApi, shopApi } = useApi();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,12 +26,16 @@ export default function AdminDashboardPage() {
 
   const loadAllShops = async () => {
     try {
-      const shops = (await shopApi.getAllShops()) as Shop[];
-      setShops(shops);
+      const response = (await shopApi.getAllShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
       const inventoryMap = new Map<number, InventoryItem[]>();
       await Promise.all(
-        shops.map(async (shop) => {
+        shopsList.map(async (shop) => {
           try {
             const inventory = (await inventoryApi.get(shop.id)) as InventoryItem[];
             inventoryMap.set(shop.id, inventory);
@@ -42,6 +48,7 @@ export default function AdminDashboardPage() {
       setShopsWithInventory(inventoryMap);
     } catch {
       setError("Failed to load shops");
+      console.error("Error loading shops:", err);
     } finally {
       setLoading(false);
     }
@@ -62,7 +69,9 @@ export default function AdminDashboardPage() {
         shop.phone.toLowerCase().includes(query);
 
       const inventory = shopsWithInventory.get(shop.id) || [];
-      const matchesProducts = inventory.some((item) => item.product.name.toLowerCase().includes(query));
+      const matchesProducts = inventory.some((item) =>
+        item.product.name.toLowerCase().includes(query)
+      );
 
       return matchesShop || matchesProducts;
     });

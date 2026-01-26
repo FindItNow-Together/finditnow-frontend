@@ -1,0 +1,26 @@
+
+> finditnow-frontend@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Ôû▓ Next.js 16.0.3 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ Ô£ô Compiled successfully in 3.2s
+   Running TypeScript ...
+Failed to compile.
+
+./app/(public)/discover/DiscoverPage.tsx:38:37
+Type error: Argument of type 'string | number' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+
+  36 |     try {
+  37 |       const params = new URLSearchParams();
+> 38 |       if (debQuery) params.set("q", debQuery);
+     |                                     ^
+  39 |       if (category !== "all") params.set("category", category);
+  40 |       if (userLoc) {
+  41 |         params.set("lat", String(userLoc.lat));
+Next.js build worker exited with code: 1 and signal: null

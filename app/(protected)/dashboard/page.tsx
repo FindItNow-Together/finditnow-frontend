@@ -22,8 +22,10 @@ export default function DashboardPage() {
 
   const loadShops = async () => {
     try {
-      const shops: Shop[] = (await shopApi.getMyShops()) as Shop[];
-      setShops(shops || []);
+      const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
       // Load inventory for each shop
       const inventoryMap = new Map<number, InventoryItem[]>();
@@ -42,6 +44,7 @@ export default function DashboardPage() {
       setShopsWithInventory(inventoryMap);
     } catch (err: any) {
       setError("Failed to load shops");
+      console.error("Error loading shops:", err);
     } finally {
       setLoading(false);
     }
@@ -164,14 +167,14 @@ export default function DashboardPage() {
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           {filteredShops.map((shop) => {
-            const inventory = shopsWithInventory.get(shop.id) || [];
-            const topProducts = inventory.map((item) => item.product.name);
+            const products = shopsWithProducts.get(shop.id) || [];
+            const topProducts = products.map((p) => p.name);
 
             return (
               <ShopCard
                 key={shop.id}
                 shop={shop}
-                productCount={inventory.length}
+                productCount={products.length}
                 topProducts={topProducts}
               />
             );
