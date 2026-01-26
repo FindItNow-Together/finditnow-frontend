@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { URL } from "node:url";
+import { useCallback, useMemo } from "react";
 
 type ApiAccess = "public" | "private";
 
@@ -174,12 +174,7 @@ export default function useApi() {
 
   // Helper for JSON parsing to keep the domain APIs clean
   const requestJson = useCallback(
-    async <T>(
-      method: string,
-      url: string,
-      body?: any,
-      auth: ApiAccess = "private"
-    ): Promise<T> => {
+    async <T>(method: string, url: string, body?: any, auth: ApiAccess = "private"): Promise<T> => {
       const res = await coreRequest(
         url,
         { method, body, auth },
@@ -234,14 +229,12 @@ export default function useApi() {
       inventoryApi: {
         getShopInventory: (shopId: number) =>
           requestJson("GET", `/api/v1/shops/${shopId}/inventory`),
-        getInventory: (id: number) =>
-          requestJson("GET", `/api/v1/inventory/${id}`),
+        getInventory: (id: number) => requestJson("GET", `/api/v1/inventory/${id}`),
         addInventory: (shopId: number, data: any) =>
           requestJson("POST", `/api/v1/shops/${shopId}/inventory`, data),
         updateInventory: (id: number, data: any) =>
           requestJson("PUT", `/api/v1/inventory/${id}`, data),
-        deleteInventory: (id: number) =>
-          requestJson("DELETE", `/api/v1/inventory/${id}`),
+        deleteInventory: (id: number) => requestJson("DELETE", `/api/v1/inventory/${id}`),
         reserveStock: (id: number, quantity: number) =>
           requestJson("POST", `/api/v1/inventory/${id}/reserve?quantity=${quantity}`),
         releaseStock: (id: number, quantity: number) =>

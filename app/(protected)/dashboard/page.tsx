@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
+import { PagedResponse, Shop } from "@/types/shop";
 import { InventoryItem } from "@/types/inventory";
 import ShopCard from "@/components/ShopCard";
 import useApi from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(new Map());
+  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
   const { inventoryApi, shopApi } = useApi();
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +26,9 @@ export default function DashboardPage() {
     try {
       const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
       // Handle paginated response
-      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
       setShops(shopsList);
 
       // Load inventory for each shop
@@ -32,7 +36,7 @@ export default function DashboardPage() {
       await Promise.all(
         shops.map(async (shop) => {
           try {
-            const inventory = (await inventoryApi.get(shop.id)) as InventoryItem[];
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as InventoryItem[];
             inventoryMap.set(shop.id, inventory);
           } catch (err) {
             console.error(`Failed to load inventory for shop ${shop.id}`, err);
@@ -167,17 +171,9 @@ export default function DashboardPage() {
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           {filteredShops.map((shop) => {
-            const products = shopsWithProducts.get(shop.id) || [];
-            const topProducts = products.map((p) => p.name);
+            const products = shopsWithInventory.get(shop.id) || [];
 
-            return (
-              <ShopCard
-                key={shop.id}
-                shop={shop}
-                productCount={products.length}
-                topProducts={topProducts}
-              />
-            );
+            return <ShopCard key={shop.id} shop={shop} productCount={products.length} />;
           })}
         </div>
       )}

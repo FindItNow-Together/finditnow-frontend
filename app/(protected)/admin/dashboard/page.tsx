@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
       await Promise.all(
         shopsList.map(async (shop) => {
           try {
-            const inventory = (await inventoryApi.get(shop.id)) as InventoryItem[];
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as InventoryItem[];
             inventoryMap.set(shop.id, inventory);
           } catch {
             inventoryMap.set(shop.id, []);
@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
       );
 
       setShopsWithInventory(inventoryMap);
-    } catch {
+    } catch (err) {
       setError("Failed to load shops");
       console.error("Error loading shops:", err);
     } finally {

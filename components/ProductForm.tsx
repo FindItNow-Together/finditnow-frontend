@@ -35,7 +35,9 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,8 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
   };
 
   useEffect(() => {
-    const trimmedQuery = typeof debouncedSearchQuery === 'string' ? debouncedSearchQuery.trim() : '';
+    const trimmedQuery =
+      typeof debouncedSearchQuery === "string" ? debouncedSearchQuery.trim() : "";
     if (mode === "existing" && !product && trimmedQuery.length >= 2) {
       searchProducts(trimmedQuery);
     } else {
@@ -76,7 +79,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
       if (product.category) {
         setSelectedCategory({
           label: product.category.name,
-          value: String(product.category.id)
+          value: String(product.category.id),
         });
       }
     }
@@ -93,7 +96,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
         const payload = {
           ...formData,
           categoryId: selectedCategory ? selectedCategory.value : undefined,
-          category: undefined
+          category: undefined,
         };
         await productApi.update(product.id, payload);
       } else if (mode === "existing") {
@@ -107,7 +110,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
           product: { id: selectedProduct.id },
           price,
           stock,
-          reservedStock: 0
+          reservedStock: 0,
         };
         await inventoryApi.addExisting(shopId, inventoryRequest);
       } else {
@@ -115,7 +118,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
         const payload = {
           ...formData,
           categoryId: selectedCategory ? selectedCategory.value : undefined,
-          category: undefined
+          category: undefined,
         };
         await inventoryApi.addNew(shopId, payload, { price, stock });
       }
@@ -161,9 +164,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
         {/* Mode Selection (only when adding new) */}
         {!product && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Source
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Product Source</label>
             <div className="flex gap-4">
               <label className="flex items-center cursor-pointer">
                 <input
@@ -198,9 +199,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
         {/* Existing Product Search */}
         {mode === "existing" && !product && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Product *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Product *</label>
             <input
               type="text"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
@@ -211,9 +210,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
                 setDebounceQuery(e.target.value);
               }}
             />
-            {loadingSearch && (
-              <p className="mt-2 text-sm text-gray-500">Searching...</p>
-            )}
+            {loadingSearch && <p className="mt-2 text-sm text-gray-500">Searching...</p>}
             {searchQuery.trim().length > 0 && searchQuery.trim().length < 2 && (
               <p className="mt-2 text-sm text-gray-500">Type at least 2 characters to search</p>
             )}
@@ -227,12 +224,14 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
                       setSearchQuery(prod.name);
                       setSearchResults([]);
                     }}
-                    className={`p-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 ${selectedProduct?.id === prod.id ? "bg-blue-100" : ""
-                      }`}
+                    className={`p-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 ${
+                      selectedProduct?.id === prod.id ? "bg-blue-100" : ""
+                    }`}
                   >
                     <p className="font-medium text-gray-800">{prod.name}</p>
                     <p className="text-sm text-gray-600">
-                      {prod.category?.name || "No category"} • {prod.description || "No description"}
+                      {prod.category?.name || "No category"} •{" "}
+                      {prod.description || "No description"}
                     </p>
                   </div>
                 ))}
@@ -243,8 +242,12 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
             )}
             {selectedProduct && searchResults.length === 0 && (
               <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm font-medium text-green-800">Selected: {selectedProduct.name}</p>
-                <p className="text-xs text-green-600">{selectedProduct.description || "No description"}</p>
+                <p className="text-sm font-medium text-green-800">
+                  Selected: {selectedProduct.name}
+                </p>
+                <p className="text-xs text-green-600">
+                  {selectedProduct.description || "No description"}
+                </p>
               </div>
             )}
           </div>

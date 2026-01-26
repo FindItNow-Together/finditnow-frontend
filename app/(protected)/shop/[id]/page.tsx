@@ -66,7 +66,7 @@ export default function ShopDetailsPage() {
     if (!shopId) return;
 
     try {
-      const items = (await inventoryApi.get(shopId)) as InventoryItem[];
+      const items = (await inventoryApi.getShopInventory(shopId)) as InventoryItem[];
       setInventory(items);
       setSelectedInventory(new Set()); // Clear selection on reload
     } catch (err: any) {
@@ -224,8 +224,8 @@ export default function ShopDetailsPage() {
           </h2>
 
           <p className="mb-6 text-sm text-gray-600">
-            The following {itemsToDelete.length} product(s) will be permanently deleted. This
-            action cannot be undone.
+            The following {itemsToDelete.length} product(s) will be permanently deleted. This action
+            cannot be undone.
           </p>
 
           {/* Product List */}
