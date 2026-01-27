@@ -20,8 +20,7 @@ function rewriteUrl(url: string): string {
 }
 
 export function getBaseUrl(envUrl?: string): string {
-  if (typeof window !== "undefined") return "";
-  return envUrl ?? "http://localhost:3000";
+  return envUrl ?? "http://localhost";
 }
 
 export const publicBaseUrl = getBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
@@ -166,12 +165,7 @@ export default function useApi() {
 
   // Helper for JSON parsing to keep the domain APIs clean
   const requestJson = useCallback(
-    async <T>(
-      method: string,
-      url: string,
-      body?: any,
-      auth: ApiAccess = "private"
-    ): Promise<T> => {
+    async <T>(method: string, url: string, body?: any, auth: ApiAccess = "private"): Promise<T> => {
       const res = await coreRequest(
         url,
         { method, body, auth },

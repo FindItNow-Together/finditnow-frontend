@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
 import {
   ArrowLeft,
-  Box,
   Calendar,
   CheckCircle,
   Clock,
@@ -98,10 +97,10 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
 
   if (delivery) {
     const statusMap = {
-      "PENDING": 0,
-      "ASSIGNED": 1,
-      "PICKED_UP": 2,
-      "DELIVERED": 3
+      PENDING: 0,
+      ASSIGNED: 1,
+      PICKED_UP: 2,
+      DELIVERED: 3,
     };
     const currentLevel = statusMap[delivery.status] ?? 0;
 
@@ -109,7 +108,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
       { key: "PENDING", label: "Looking for Agent", desc: "We are assigning a delivery partner" },
       { key: "ASSIGNED", label: "Agent Assigned", desc: "Partner is on the way to shop" },
       { key: "PICKED_UP", label: "Out for Delivery", desc: "Agent has picked up your order" },
-      { key: "DELIVERED", label: "Delivered", desc: "Package delivered" }
+      { key: "DELIVERED", label: "Delivered", desc: "Package delivered" },
     ];
 
     steps.forEach((step, idx) => {
@@ -120,10 +119,10 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
 
       deliveryUpdates.push({
         status: step.label,
-        date: isCurrent ? "In Progress" : (isCompleted ? "Completed" : "Pending"),
+        date: isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending",
         completed: isCompleted,
         icon: isCompleted ? CheckCircle : Truck,
-        description: step.desc
+        description: step.desc,
       });
     });
   } else {
@@ -229,10 +228,11 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
                     return (
                       <div key={index} className="relative">
                         <div
-                          className={`absolute -left-[34px] p-1.5 rounded-full ring-4 ring-white ${update.completed
+                          className={`absolute -left-[34px] p-1.5 rounded-full ring-4 ring-white ${
+                            update.completed
                               ? "bg-green-500 text-white"
                               : "bg-gray-200 text-gray-400"
-                            }`}
+                          }`}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
