@@ -1,0 +1,25 @@
+
+> finditnow-frontend@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Ôû▓ Next.js 16.0.3 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ Ô£ô Compiled successfully in 3.6s
+   Running TypeScript ...
+Failed to compile.
+
+./app/(public)/sign_up/page.tsx:127:52
+Type error: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<undefined>'.
+
+  125 |                   value={role == "SHOP_OWNER" ? "shop" : role}
+  126 |                   className="hidden"
+> 127 |                   onChange={(e) => setSelectedRole(e.target.value)}
+      |                                                    ^
+  128 |                   checked={selectedRole === (role == "SHOP_OWNER" ? "shop" : role)}
+  129 |                 />
+  130 |                 {role.replace("_", " ")}
+Next.js build worker exited with code: 1 and signal: null
