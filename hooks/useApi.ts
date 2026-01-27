@@ -205,6 +205,13 @@ export default function useApi() {
         delete: (id: number) => requestJson("DELETE", `/api/shop/products/${id}`),
         deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/products/bulk", ids),
       },
+      deliveryApi: {
+        getMyDeliveries: (status?: string, page = 0, limit = 10) => {
+          const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+          if (status) params.append("status", status);
+          return requestJson("GET", `/api/deliveries/mine?${params.toString()}`);
+        },
+      },
     }),
     [get, post, put, del, requestJson]
   );

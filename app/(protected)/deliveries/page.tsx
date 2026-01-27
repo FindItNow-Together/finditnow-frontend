@@ -1,56 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Calendar, DollarSign, MapPin, Package, Truck, ChevronRight } from "lucide-react";
+import { Calendar, Truck, ChevronRight, Loader2 } from "lucide-react";
+import useApi from "@/hooks/useApi";
+import { DeliveryResponse, PagedDeliveryResponse } from "@/types/delivery";
 
-// Mock data type to simulate OrderResponse structure for deliveries
-type Delivery = {
-    id: string;
-    orderId: string;
-    pickupLocation: string;
-    dropLocation: string;
-    status: "ASSIGNED" | "PICKED_UP" | "DELIVERED" | "CANCELLED";
-    earnings: number;
-    date: string;
-    customerName: string;
-};
-
-// Mock data
-const MOCK_DELIVERIES: Delivery[] = [
-    {
-        id: "DEL-001",
-        orderId: "ORD-1234",
-        pickupLocation: "Fresh Mart, Indiranagar, Bangalore",
-        dropLocation: "Flat 402, Sai Residency, Koramangala",
-        status: "DELIVERED",
-        earnings: 150,
-        date: "2024-01-25T14:30:00",
-        customerName: "Arjun Kumar",
-    },
-    {
-        id: "DEL-002",
-        orderId: "ORD-5678",
-        pickupLocation: "Tech Store, MG Road, Pune",
-        dropLocation: "Plot 45, Shivaji Nagar, Pune",
-        status: "ASSIGNED",
-        earnings: 200,
-        date: "2024-01-27T10:15:00",
-        customerName: "Priya Sharma",
-    },
-    {
-        id: "DEL-003",
-        orderId: "ORD-9012",
-        pickupLocation: "Burger King, Connaught Place, New Delhi",
-        dropLocation: "Sector 15, Gurgaon, Haryana",
-        status: "PICKED_UP",
-        earnings: 85,
-        date: "2024-01-27T12:00:00",
-        customerName: "Rahul Singh",
-    },
-];
-
-const statusColors = {
+const statusColors: Record<string, string> = {
     ASSIGNED: "bg-blue-100 text-blue-800",
     PICKED_UP: "bg-yellow-100 text-yellow-800",
     DELIVERED: "bg-green-100 text-green-800",
@@ -59,11 +15,42 @@ const statusColors = {
 
 export default function DeliveriesPage() {
     const [activeTab, setActiveTab] = useState<"ACTIVE" | "PAST">("ACTIVE");
+    const [deliveries, setDeliveries] = useState<DeliveryResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const activeDeliveries = MOCK_DELIVERIES.filter(
+    const { deliveryApi } = useApi();
+
+    const fetchDeliveries = async () => {
+        try {
+            setLoading(true);
+            // For now fetching all, but ideally we fetch based on status/tab
+            // The backend supports status filtering.
+            // ACTIVE = ASSIGNED, PICKED_UP
+            // PAST = DELIVERED, CANCELLED
+            // Since fetching multiple statuses might need multiple calls or backend change,
+            // I'll fetch everything and filter client-side for now, or just fetch page 0.
+
+            const response = await deliveryApi.getMyDeliveries(undefined, 0, 50) as PagedDeliveryResponse;
+            setDeliveries(response.content || []);
+        } catch (err) {
+            console.error("Failed to fetch deliveries", err);
+            // setError("Failed to load deliveries");
+            // Fallback to empty for now to avoid breaking UI if backend is down
+            setDeliveries([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDeliveries();
+    }, []);
+
+    const activeDeliveries = deliveries.filter(
         (d) => d.status === "ASSIGNED" || d.status === "PICKED_UP"
     );
-    const pastDeliveries = MOCK_DELIVERIES.filter(
+    const pastDeliveries = deliveries.filter(
         (d) => d.status === "DELIVERED" || d.status === "CANCELLED"
     );
 
@@ -82,8 +69,8 @@ export default function DeliveriesPage() {
                     <button
                         onClick={() => setActiveTab("ACTIVE")}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "ACTIVE"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-gray-600 hover:bg-gray-50"
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-600 hover:bg-gray-50"
                             }`}
                     >
                         Active
@@ -94,8 +81,8 @@ export default function DeliveriesPage() {
                     <button
                         onClick={() => setActiveTab("PAST")}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "PAST"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-gray-600 hover:bg-gray-50"
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-600 hover:bg-gray-50"
                             }`}
                     >
                         Past
@@ -104,7 +91,11 @@ export default function DeliveriesPage() {
 
                 {/* Content */}
                 <div className="space-y-4">
-                    {displayedDeliveries.length === 0 ? (
+                    {loading ? (
+                        <div className="flex justify-center py-12">
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                        </div>
+                    ) : displayedDeliveries.length === 0 ? (
                         <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
                             <Truck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-900">No deliveries found</h3>
@@ -127,10 +118,10 @@ export default function DeliveriesPage() {
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="text-sm font-semibold text-gray-900">
-                                                        {delivery.orderId}
+                                                        #{delivery.orderId.substring(0, 8)}
                                                     </span>
                                                     <span
-                                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[delivery.status]
+                                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[delivery.status] || "bg-gray-100 text-gray-800"
                                                             }`}
                                                     >
                                                         {delivery.status.replace("_", " ")}
@@ -138,12 +129,12 @@ export default function DeliveriesPage() {
                                                 </div>
                                                 <div className="flex items-center text-xs text-gray-500">
                                                     <Calendar className="h-3 w-3 mr-1" />
-                                                    {format(new Date(delivery.date), "dd MMM yyyy, hh:mm a")}
+                                                    {delivery.createdAt && format(new Date(delivery.createdAt), "dd MMM yyyy, hh:mm a")}
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-lg font-bold text-gray-900">
-                                                    ₹{delivery.earnings}
+                                                    ₹{delivery.deliveryCharge}
                                                 </div>
                                                 <div className="text-xs text-gray-500">Earnings</div>
                                             </div>
@@ -166,7 +157,7 @@ export default function DeliveriesPage() {
                                                         Pickup
                                                     </p>
                                                     <p className="text-sm font-medium text-gray-900">
-                                                        {delivery.pickupLocation}
+                                                        {delivery.pickupAddress}
                                                     </p>
                                                 </div>
                                             </div>
@@ -181,11 +172,14 @@ export default function DeliveriesPage() {
                                                         Drop off
                                                     </p>
                                                     <p className="text-sm font-medium text-gray-900">
-                                                        {delivery.dropLocation}
+                                                        {delivery.deliveryAddress}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        Customer: {delivery.customerName}
-                                                    </p>
+                                                    {/* Instructions if present */}
+                                                    {delivery.instructions && (
+                                                        <p className="text-xs text-gray-500 mt-2 italic">
+                                                            Note: {delivery.instructions}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
