@@ -109,7 +109,9 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     if (!checkoutCart || !selectedAddressId) return;
 
     if (deliveryType === "TAKEAWAY") {
-      setPricing(prev => prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null);
+      setPricing((prev) =>
+        prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
+      );
       return;
     }
 
@@ -124,15 +126,19 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .then((data) => {
         if (data && pricing) {
           const newFee = data.amount;
-          setPricing(prev => prev ? {
-            ...prev,
-            deliveryFee: newFee,
-            payable: prev.payable - prev.deliveryFee + newFee
-          } : null);
+          setPricing((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  deliveryFee: newFee,
+                  payable: prev.payable - prev.deliveryFee + newFee,
+                }
+              : null
+          );
           setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Re-run when address or delivery type changes
 
   const canPlaceOrder = useMemo(() => {
@@ -247,7 +253,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       setStatus("ERROR");
       setError(
         error.message ||
-        "Failed to verify payment. Please contact support with order ID: " + orderId
+          "Failed to verify payment. Please contact support with order ID: " + orderId
       );
     }
   }
@@ -332,7 +338,9 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Instructions</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Delivery Instructions
+          </label>
           <textarea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
@@ -408,15 +416,17 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
               <button
                 key={address.id}
                 onClick={() => handleAddressSelect(address.id)}
-                className={`w-full text-left p-4 rounded-lg border transition-colors ${selectedAddressId === address.id
+                className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                  selectedAddressId === address.id
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <MapPin
-                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${selectedAddressId === address.id ? "text-blue-600" : "text-gray-400"
-                      }`}
+                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                      selectedAddressId === address.id ? "text-blue-600" : "text-gray-400"
+                    }`}
                   />
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">{address.fullAddress}</p>
