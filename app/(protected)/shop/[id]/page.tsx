@@ -92,7 +92,7 @@ export default function ShopDetailsPage() {
     if (!shopId) return;
     try {
       if (!reset) setLoadingOrders(true);
-      const res = await get(`/api/orders/shop/${shopId}?page=${page}&size=10`);
+      const res = await get(`/api/orders/shop/${shopId}?page=${page}&size=10`, { auth: "private" });
       if (res.ok) {
         const data = await res.json();
         const newOrders = data.content;
@@ -117,7 +117,7 @@ export default function ShopDetailsPage() {
   const loadEarnings = async () => {
     if (!shopId) return;
     try {
-      const res = await get(`/api/orders/shop/${shopId}/earnings`);
+      const res = await get(`/api/orders/shop/${shopId}/earnings`, { auth: "private" });
       if (res.ok) {
         const amount = await res.json();
         setEarnings(amount || 0);
@@ -130,7 +130,7 @@ export default function ShopDetailsPage() {
   const loadRecentProducts = async () => {
     if (!shopId) return;
     try {
-      const res = await get(`/api/orders/shop/${shopId}/recent-products`);
+      const res = await get(`/api/orders/shop/${shopId}/recent-products`, { auth: "private" });
       if (res.ok) {
         const products = await res.json();
         setRecentProducts(products);
@@ -465,9 +465,7 @@ export default function ShopDetailsPage() {
               maximumFractionDigits: 0,
             }).format(earnings)}
           </p>
-          <p className="mt-2 text-xs text-gray-500">
-            Lifetime earnings from all completed orders
-          </p>
+          <p className="mt-2 text-xs text-gray-500">Lifetime earnings from all completed orders</p>
         </div>
 
         {/* Recent Products Card */}
@@ -476,7 +474,10 @@ export default function ShopDetailsPage() {
           {recentProducts.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {recentProducts.map((name, i) => (
-                <span key={i} className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                <span
+                  key={i}
+                  className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+                >
                   {name}
                 </span>
               ))}
@@ -524,7 +525,8 @@ export default function ShopDetailsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric", month: "short"
+                          day: "numeric",
+                          month: "short",
                         })}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
@@ -533,25 +535,34 @@ export default function ShopDetailsPage() {
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {new Intl.NumberFormat("en-IN", {
-                          style: "currency", currency: "INR", maximumFractionDigits: 0
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 0,
                         }).format(order.totalAmount)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                           ${order.status === 'created' ? 'bg-gray-100 text-gray-800' :
-                            order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                              order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                'bg-blue-100 text-blue-800'
-                          }
-                         `}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                           ${
+                             order.status === "created"
+                               ? "bg-gray-100 text-gray-800"
+                               : order.status === "delivered"
+                                 ? "bg-green-100 text-green-800"
+                                 : order.status === "cancelled"
+                                   ? "bg-red-100 text-red-800"
+                                   : "bg-blue-100 text-blue-800"
+                           }
+                         `}
+                        >
                           {order.status.replace(/_/g, " ").toUpperCase()}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-600">
-                        {order.paymentStatus === 'paid' ?
-                          <span className="text-green-600 font-medium">Paid</span> :
+                        {order.paymentStatus === "paid" ? (
+                          <span className="text-green-600 font-medium">Paid</span>
+                        ) : (
                           <span className="text-yellow-600">Pending</span>
-                        }
+                        )}
                       </td>
                     </tr>
                   ))}
