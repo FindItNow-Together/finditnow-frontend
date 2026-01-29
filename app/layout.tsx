@@ -9,6 +9,7 @@ import { User, UserRole } from "@/types/user";
 import { cookies } from "next/headers";
 
 import { URL } from "node:url";
+import Script from "next/script";
 
 export function getBaseUrl(envUrl?: string): string {
   const baseUrl = envUrl ?? "http://localhost";
@@ -95,6 +96,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <AuthProvider auth={auth}>
           <CartProvider>
             <Navbar />

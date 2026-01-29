@@ -28,14 +28,14 @@ export default function DiscoverClient() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}
+      () => { }
     );
   }, []);
 
   const fetchOpportunities = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (debQuery) params.set("q", debQuery);
+      if (debQuery) params.set("q", String(debQuery));
       if (category !== "all") params.set("category", category);
       if (userLoc) {
         params.set("lat", String(userLoc.lat));

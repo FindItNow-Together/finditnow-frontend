@@ -45,7 +45,8 @@ export default function GlobalSearch() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (debQuery.trim().length > 2) {
+    const q = String(debQuery ?? "");
+    if (q.trim().length > 2) {
       fetchResults();
     } else {
       setResults(null);
@@ -66,7 +67,7 @@ export default function GlobalSearch() {
   const fetchResults = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ q: debQuery });
+      const params = new URLSearchParams({ q: String(debQuery ?? "") });
       const res = await api.get(`/api/search/global?${params.toString()}`, { auth: "public" });
 
       if (res.ok) {

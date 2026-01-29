@@ -9,7 +9,7 @@ function SignUp() {
   const [error, setError] = useState("");
   const [isAdminPending, setIsAdminPending] = useState(false); // State for Admin view
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState();
+  const [selectedRole, setSelectedRole] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   async function signUpUser(e: FormEvent<HTMLFormElement>) {
@@ -113,11 +113,10 @@ function SignUp() {
             {["CUSTOMER", "SHOP_OWNER", "DELIVERY_AGENT", "ADMIN"].map((role) => (
               <label
                 key={role}
-                className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${
-                  selectedRole === (role == "SHOP_OWNER" ? "shop" : role)
+                className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${selectedRole === (role == "SHOP_OWNER" ? "shop" : role)
                     ? "bg-white shadow-sm text-black"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 <input
                   type="radio"

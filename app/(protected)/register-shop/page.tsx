@@ -1,11 +1,12 @@
 "use client";
 
-import LocationMap  from "@/app/_components/Map";
+import LocationMap from "@/app/_components/Map";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreateableSelect from "@/components/CreateableSelect";
 
 export default function RegisterShopPage() {
   const router = useRouter();
@@ -21,9 +22,11 @@ export default function RegisterShopPage() {
     latitude: 51.505 as number, // Default fallback
     longitude: -0.09 as number,
     openHours: "",
-    deliveryOption: "PICKUP",
-    ownerId: "",
+    deliveryOption: "NO_DELIVERY" as "NO_DELIVERY" | "IN_HOUSE_DRIVER" | "THIRD_PARTY_PARTNER",
+    categoryId: undefined as number | undefined,
   });
+
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(null);
 
   // Automatically fetch initial location
   useEffect(() => {
@@ -46,7 +49,12 @@ export default function RegisterShopPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await shopApi.register(formData);
+      const payload = {
+        ...formData,
+        categoryId: selectedCategory ? parseInt(selectedCategory.value) : undefined,
+      };
+
+      await shopApi.register(payload);
       if (accessRole == "ADMIN") {
         router.push("/admin/dashboard");
       } else {
@@ -76,6 +84,16 @@ export default function RegisterShopPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <CreateableSelect
+              type="SHOP"
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              placeholder="Select or create a shop category..."
             />
           </div>
 
@@ -138,11 +156,11 @@ export default function RegisterShopPage() {
             <select
               className="w-full px-4 py-2 border rounded-lg mt-1"
               value={formData.deliveryOption}
-              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value as any })}
             >
-              <option value="PICKUP">Pickup Only</option>
-              <option value="DELIVERY">Delivery Only</option>
-              <option value="BOTH">Both</option>
+              <option value="NO_DELIVERY">No Delivery (Pickup Only)</option>
+              <option value="IN_HOUSE_DRIVER">In-House Delivery Driver</option>
+              <option value="THIRD_PARTY_PARTNER">Third Party Delivery Partner</option>
             </select>
           </div>
 

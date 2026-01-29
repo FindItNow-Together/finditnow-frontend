@@ -6,20 +6,26 @@ export default function ProductCard({ product, opportunities }: any) {
   const best = opportunities[0];
 
   return (
-    <div className="bg-white p-4 rounded-xl flex gap-4">
-      <img src={product.image} className="w-20 h-20" />
-      <div className="flex-1">
-        <h3>{product.name}</h3>
-        <p className="text-blue-600">₹{product.minPrice}</p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <button className="bg-green-600 text-white px-3 py-1 rounded">Buy Now</button>
-        <button
-          className="border px-3 py-1 rounded"
-          onClick={() => router.push(`/shops/${best.shop.id}?focus=${product.id}`)}
-        >
-          View Shops
-        </button>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 flex gap-4">
+      <img
+        src={product.image}
+        alt={product.name}
+        className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover flex-shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
+        <p className="text-xl font-semibold text-blue-600 mb-4">₹{product.minPrice}</p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition-colors">
+           add to cart
+          </button>
+          <button
+            className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition-colors"
+            onClick={() => router.push(`/shop/${best.shop.id}?focus=${product.id}`)}
+          >
+            View Shops
+          </button>
+        </div>
       </div>
     </div>
   );
