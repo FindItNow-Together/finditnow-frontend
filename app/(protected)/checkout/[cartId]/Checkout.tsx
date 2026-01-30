@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
-import { Cart, useCart } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { UserAddress } from "@/types/user";
 import { Edit3, MapPin, Plus } from "lucide-react";
 import Modal from "@/app/_components/Modal";
 import CreateAddressModal from "@/app/_components/CreateAddressModal";
+import { Cart } from "@/types/cart";
 
 type Pricing = {
   deliveryFee: number;
@@ -62,14 +63,19 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (cart && cart.id === cartId) {
+    if (!cart) {
+      setStatus("LOADING");
+      return;
+    }
+
+    if (cart && cart.cartId === cartId) {
       setCheckoutCart(cart);
       setStatus("READY");
       return;
     }
 
     api
-      .get(`/api/cart/${cartId}`, { auth: "private" })
+      .get(`/api/cart/user/me`, { auth: "private" })
       .then(async (res) => {
         if (!res.ok) throw new Error("Invalid cart");
         const data = await res.json();
@@ -81,16 +87,20 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         clearCart();
         router.replace("/cart");
       });
-  }, [cartId]);
+  }, [cartId, cart?.cartId]);
 
   useEffect(() => {
     if (!checkoutCart) return;
 
     api
-      .get(`/api/cart/${checkoutCart.id}/pricing`, { auth: "private" })
-      .then((res) => (res.ok ? res.json() : null))
+      .get(`/api/cart/${checkoutCart.cartId}/pricing`, { auth: "private" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Invalid cart");
+        return res.json();
+      })
       .then(setPricing)
-      .catch(() => {
+      .catch((err) => {
+        console.log(err.message);
         setPricing({ deliveryFee: 100, payable: 1100, tax: 1000 });
       });
   }, [checkoutCart]);
@@ -130,7 +140,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       const orderRes = await api.post(
         "/api/orders/from-cart",
         {
-          cartId: checkoutCart.id,
+          cartId: checkoutCart.cartId,
           addressId: selectedAddressId,
           paymentMethod,
         },
@@ -281,7 +291,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       <section>
         <h2 className="font-semibold mb-2">Order Summary</h2>
         {checkoutCart.items.map((i) => (
-          <div key={i.id} className="flex justify-between text-sm">
+          <div key={i.itemId} className="flex justify-between text-sm">
             <span>
               {i.productName} × {i.quantity}
             </span>
@@ -294,7 +304,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       <section className="border-t pt-3">
         <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>₹{pricing.payable}</span>
+          <span>₹{pricing?.payable}</span>
         </div>
       </section>
 
@@ -325,7 +335,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         onClick={placeOrder}
         className="w-full bg-blue-600 text-white py-3 rounded disabled:opacity-50"
       >
-        {paymentMethod === "online" ? `Pay ₹${pricing.payable} & Place Order` : "Place Order"}
+        {paymentMethod === "online" ? `Pay ₹${pricing?.payable} & Place Order` : "Place Order"}
       </button>
 
       {showAddressSelectModal && (

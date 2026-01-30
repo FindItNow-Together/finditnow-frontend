@@ -50,7 +50,7 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (!cart) return;
-    router.push(`/checkout/${cart.id}`);
+    router.push(`/checkout/${cart.cartId}`);
   };
 
   // Empty cart state
@@ -98,20 +98,22 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-4">
             {cart.items.map((item) => (
               <div
-                key={item.id}
+                key={item.itemId}
                 className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow"
               >
                 <div className="flex gap-4">
+                  {/* Product Info */}
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{item.productName}</h3>
                     <p className="text-sm text-gray-600 mt-1">₹{item.price.toFixed(2)}</p>
                   </div>
 
+                  {/* Quantity Controls */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 bg-gray-50 rounded-lg border border-gray-200">
                       <button
-                        onClick={() => handleDecreaseQuantity(item.id)}
-                        disabled={processingItem === item.id || isLoading}
+                        onClick={() => handleDecreaseQuantity(item.itemId)}
+                        disabled={processingItem === item.itemId || isLoading}
                         className="p-2 hover:bg-gray-100 rounded-l-lg disabled:opacity-50"
                       >
                         <Minus className="h-4 w-4 text-gray-600" />
@@ -120,17 +122,18 @@ export default function CartPage() {
                       <span className="w-10 text-center font-medium">{item.quantity}</span>
 
                       <button
-                        onClick={() => handleIncreaseQuantity(item.id)}
-                        disabled={processingItem === item.id || isLoading}
+                        onClick={() => handleIncreaseQuantity(item.itemId)}
+                        disabled={processingItem === item.itemId || isLoading}
                         className="p-2 hover:bg-gray-100 rounded-r-lg disabled:opacity-50"
                       >
                         <Plus className="h-4 w-4 text-gray-600" />
                       </button>
                     </div>
 
+                    {/* Remove Button */}
                     <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={processingItem === item.id || isLoading}
+                      onClick={() => handleRemoveItem(item.itemId)}
+                      disabled={processingItem === item.itemId || isLoading}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
                     >
                       <Trash2 className="h-5 w-5" />
@@ -160,11 +163,15 @@ export default function CartPage() {
 
               <button
                 onClick={handleCheckout}
-                disabled={isLoading}
+                disabled={isLoading || cart.items.length === 0}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 Proceed to Checkout
               </button>
+
+              <p className="text-xs text-gray-500 text-center mt-3">
+                Delivery fee and tax will be calculated during checkout
+              </p>
             </div>
           </div>
         </div>

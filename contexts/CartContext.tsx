@@ -1,31 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
 import useApi from "@/hooks/useApi";
-import { testCart } from "@/test_files/cart-related";
-
-export interface CartItem {
-  id: string;
-  productId: number;
-  productName: string;
-  quantity: number;
-  price: number;
-}
-
-export interface Cart {
-  id: string;
-  shopId: number;
-  items: CartItem[];
-  subtotal: number;
-}
+import { Cart, CartResponse } from "@/types/cart";
 
 // Shop inventory item that gets added to cart
 export interface ShopInventoryItem {
@@ -45,7 +22,8 @@ interface CartContextType {
   error: string | null;
 
   setCart: (cart: Cart) => void;
-  clearCart: () => void;
+  clearCartState: () => void;
+  loadCart: () => Promise<void>;
 
   // Cart operations
   addToCart: (inventoryItem: ShopInventoryItem, quantity?: number) => Promise<void>;
@@ -53,6 +31,7 @@ interface CartContextType {
   increaseQuantity: (cartItemId: string) => Promise<void>;
   decreaseQuantity: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
 
   itemCount: number;
   availableStock: (productId: number) => number;
@@ -72,23 +51,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
-  const clearCart = useCallback(() => {
+  const clearCartState = useCallback(() => {
     setCartState(null);
     setError(null);
   }, []);
 
   const itemCount = useMemo(() => {
-    return cart?.items.reduce((sum, i) => sum + i.quantity, 0) ?? 0;
+    return cart?.totalItems ?? 0;
   }, [cart]);
 
   // Get available stock for a product (used for validation)
   const availableStock = useCallback(
     (productId: number): number => {
-      const item = cart?.items.find((i) => i.productId === productId);
+      const item = cart?.items.find((i) => i.inventoryId === productId);
       return item?.quantity ?? 0;
     },
     [cart]
   );
+
+  // Load cart for a specific shop
+  // UPDATED: No longer needs userData.id, uses /me endpoint
+  const loadCart = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = (await api.cartApi.getCart()) as CartResponse;
+      setCartState(response as Cart);
+    } catch (err: any) {
+      // Cart doesn't exist yet - this is okay
+      if (err.message.includes("404")) {
+        setCartState(null);
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api]);
 
   // Add item to cart
   const addToCart = useCallback(
@@ -113,34 +113,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
             return;
           }
           // Clear existing cart first
-          if (cart.id) {
-            await api.del(`/api/cart/${cart.id}`, undefined, { auth: "private" });
+          if (cart.cartId) {
+            await api.cartApi.clearCart(cart.cartId);
           }
           setCartState(null);
         }
 
         // Call API to add to cart
-        const response = await api.post(
-          "/api/cart/items",
-          {
-            cartId: cart?.id ?? null,
-            shopId: inventoryItem.shopId,
-            inventoryId: inventoryItem.id,
-            productId: inventoryItem.productId,
-            productName: inventoryItem.productName,
-            price: inventoryItem.price,
-            quantity,
-          },
-          { auth: "private" }
-        );
+        const response = (await api.cartApi.addItem({
+          inventoryId: inventoryItem.id,
+          shopId: inventoryItem.shopId,
+          quantity,
+        })) as CartResponse;
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to add item to cart");
-        }
-
-        const updatedCart = await response.json();
-        setCartState(updatedCart);
+        setCartState(response as Cart);
       } catch (err: any) {
         setError(err.message);
         throw err;
@@ -152,6 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   // Remove item from cart
+  // UPDATED: No longer reloads cart, backend now returns updated cart
   const removeFromCart = useCallback(
     async (cartItemId: string) => {
       if (!cart) return;
@@ -160,23 +147,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const response = await api.del(`/api/cart/${cart.id}/items/${cartItemId}`, undefined, {
-          auth: "private",
-        });
+        await api.cartApi.removeItem(cartItemId);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to remove item");
-        }
-
-        const updatedCart = await response.json();
-
-        // If cart is now empty, clear it
-        if (updatedCart.items.length === 0) {
-          setCartState(null);
-        } else {
-          setCartState(updatedCart);
-        }
+        // Reload the cart to get updated state
+        await loadCart();
       } catch (err: any) {
         setError(err.message);
         throw err;
@@ -184,7 +158,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [cart, api]
+    [cart, api, loadCart]
   );
 
   // Update quantity to specific value
@@ -200,19 +174,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const response = await api.put(
-          `/api/cart/${cart.id}/items/${cartItemId}`,
-          { quantity },
-          { auth: "private" }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to update quantity");
-        }
-
-        const updatedCart = await response.json();
-        setCartState(updatedCart);
+        const response = (await api.cartApi.updateItem(cartItemId, { quantity })) as CartResponse;
+        setCartState(response as Cart);
       } catch (err: any) {
         setError(err.message);
         throw err;
@@ -228,7 +191,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (cartItemId: string) => {
       if (!cart) return;
 
-      const item = cart.items.find((i) => i.id === cartItemId);
+      const item = cart.items.find((i) => i.itemId === cartItemId);
       if (!item) return;
 
       await updateQuantity(cartItemId, item.quantity + 1);
@@ -241,7 +204,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (cartItemId: string) => {
       if (!cart) return;
 
-      const item = cart.items.find((i) => i.id === cartItemId);
+      const item = cart.items.find((i) => i.itemId === cartItemId);
       if (!item) return;
 
       // If quantity is 1, remove item instead
@@ -255,24 +218,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cart, removeFromCart, updateQuantity]
   );
 
-  useEffect(() => {
-    setCart(testCart);
-  }, []);
+  // Clear entire cart
+  const clearCart = useCallback(async () => {
+    if (!cart?.cartId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await api.cartApi.clearCart(cart.cartId);
+      setCartState(null);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cart, api]);
 
   return (
     <CartContext.Provider
       value={{
         cart,
-        cartId: cart?.id ?? null,
+        cartId: cart?.cartId ?? null,
         isLoading,
         error,
         setCart,
-        clearCart,
+        clearCartState,
+        loadCart,
         addToCart,
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
         updateQuantity,
+        clearCart,
         itemCount,
         availableStock,
       }}

@@ -6,6 +6,7 @@ import useApi from "@/hooks/useApi";
 import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreateableSelect from "@/components/CreateableSelect";
 import { toast } from "sonner";
 
 export default function RegisterShopPage() {
@@ -22,9 +23,11 @@ export default function RegisterShopPage() {
     latitude: 51.505,
     longitude: -0.09,
     openHours: "",
-    deliveryOption: "PICKUP",
-    ownerId: "",
+    deliveryOption: "NO_DELIVERY" as "NO_DELIVERY" | "IN_HOUSE_DRIVER" | "THIRD_PARTY_PARTNER",
+    categoryId: undefined as number | undefined,
   });
+
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(null);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -49,7 +52,12 @@ export default function RegisterShopPage() {
     setLoading(true);
 
     try {
-      await shopApi.register(formData);
+      const payload = {
+        ...formData,
+        categoryId: selectedCategory ? parseInt(selectedCategory.value) : undefined,
+      };
+
+      await shopApi.register(payload);
       toast.success("Shop registered successfully");
 
       if (accessRole === "ADMIN") {
@@ -81,6 +89,16 @@ export default function RegisterShopPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <CreateableSelect
+              type="SHOP"
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              placeholder="Select or create a shop category..."
             />
           </div>
 
@@ -141,11 +159,11 @@ export default function RegisterShopPage() {
             <select
               className="w-full px-4 py-2 border rounded-lg mt-1"
               value={formData.deliveryOption}
-              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, deliveryOption: e.target.value as any })}
             >
-              <option value="PICKUP">Pickup Only</option>
-              <option value="DELIVERY">Delivery Only</option>
-              <option value="BOTH">Both</option>
+              <option value="NO_DELIVERY">No Delivery (Pickup Only)</option>
+              <option value="IN_HOUSE_DRIVER">In-House Delivery Driver</option>
+              <option value="THIRD_PARTY_PARTNER">Third Party Delivery Partner</option>
             </select>
           </div>
 

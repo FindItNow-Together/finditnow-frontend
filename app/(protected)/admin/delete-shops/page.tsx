@@ -28,9 +28,11 @@ export default function AdminDeleteShopsPage() {
 
   const loadShops = async () => {
     try {
-      const shops = (await shopApi.getAllShops()) as Shop[];
-      setShops(shops);
-    } catch (err) {
+      const response = (await shopApi.getAllShops()) as any;
+      // Handle paginated response
+      const shops = response.content || response;
+      setShops(Array.isArray(shops) ? shops : []);
+    } catch (err: any) {
       console.error("Error loading shops:", err);
       toast.error("Failed to load shops. Please refresh the page.");
     } finally {

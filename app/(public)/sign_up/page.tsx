@@ -9,7 +9,7 @@ function SignUp() {
   const api = useApi();
   const [isAdminPending, setIsAdminPending] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>();
+  const [selectedRole, setSelectedRole] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   async function signUpUser(e: FormEvent<HTMLFormElement>) {

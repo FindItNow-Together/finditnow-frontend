@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
-import { Shop } from "@/types/shop";
+import { Shop, PagedResponse } from "@/types/shop";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -39,8 +39,13 @@ export default function DeleteShopsPage() {
 
   const loadShops = async () => {
     try {
-      const shops = (await shopApi.getMyShops()) as Shop[];
-      setShops(shops);
+      // Call the API to get all shops owned by the current user
+      const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+
+      // Update the shops state with the fetched data
+      setShops(shopsList);
     } catch (err) {
       console.error("Error loading shops:", err);
       toast.error("Failed to load shops. Please refresh the page.");

@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
-import { Product } from "@/types/product";
+import { InventoryItem } from "@/types/inventory";
 import ProductForm from "@/components/ProductForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import useApi from "@/hooks/useApi";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { ShoppingCart } from "lucide-react";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: "No Delivery Service",
@@ -26,26 +28,28 @@ export default function ShopDetailsPage() {
   const params = useParams();
   const shopId = params?.id ? Number(params.id) : null;
 
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi, productApi } = useApi();
+  const { addToCart, itemCount } = useCart();
 
   const [shop, setShop] = useState<Shop | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingInventoryItem, setEditingInventoryItem] = useState<InventoryItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userData } = useAuth();
 
-  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
+  const [selectedInventory, setSelectedInventory] = useState<Set<number>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && shopId) {
       loadShopDetails();
-      loadProducts();
+      loadInventory();
     }
   }, [isAuthenticated, shopId]);
 
@@ -62,41 +66,41 @@ export default function ShopDetailsPage() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadInventory = async () => {
     if (!shopId) return;
 
     try {
-      const prods = (await productApi.getByShop(shopId)) as Product[];
-      setProducts(prods);
-      setSelectedProducts(new Set()); // Clear selection on reload
+      const items = (await inventoryApi.getShopInventory(shopId)) as InventoryItem[];
+      setInventory(items);
+      setSelectedInventory(new Set()); // Clear selection on reload
     } catch (err: any) {
-      setError("Failed to load products");
+      setError("Failed to load inventory");
     }
   };
 
   const handleAddProduct = () => {
-    setEditingProduct(null);
+    setEditingInventoryItem(null);
     setShowProductForm(true);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+  const handleEditProduct = (item: InventoryItem) => {
+    setEditingInventoryItem(item);
     setShowProductForm(true);
   };
 
   const handleBulkDelete = () => {
-    if (selectedProducts.size === 0) return;
+    if (selectedInventory.size === 0) return;
     setShowDeleteConfirmation(true);
   };
 
   const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
-      await productApi.deleteMultiple(Array.from(selectedProducts));
+      await productApi.deleteMultiple(Array.from(selectedInventory));
       setShowDeleteConfirmation(false);
-      loadProducts();
+      loadInventory();
     } catch (err: any) {
-      setError("Failed to delete products");
+      setError("Failed to delete inventory items");
     } finally {
       setDeleting(false);
     }
@@ -106,49 +110,70 @@ export default function ShopDetailsPage() {
     setShowDeleteConfirmation(false);
   };
 
-  const toggleProductSelection = (productId: number) => {
-    const newSelection = new Set(selectedProducts);
-    if (newSelection.has(productId)) {
-      newSelection.delete(productId);
+  const toggleInventorySelection = (inventoryId: number) => {
+    const newSelection = new Set(selectedInventory);
+    if (newSelection.has(inventoryId)) {
+      newSelection.delete(inventoryId);
     } else {
-      newSelection.add(productId);
+      newSelection.add(inventoryId);
     }
-    setSelectedProducts(newSelection);
+    setSelectedInventory(newSelection);
   };
 
   const toggleAllSelection = () => {
-    if (selectedProducts.size === filteredProducts.length) {
-      setSelectedProducts(new Set());
+    if (selectedInventory.size === filteredInventory.length) {
+      setSelectedInventory(new Set());
     } else {
-      setSelectedProducts(new Set(filteredProducts.map((p) => p.id)));
+      setSelectedInventory(new Set(filteredInventory.map((item) => item.id)));
     }
   };
 
   const handleProductSaved = () => {
     setShowProductForm(false);
-    setEditingProduct(null);
-    loadProducts();
+    setEditingInventoryItem(null);
+    loadInventory();
   };
 
-  // Filter products based on search query
-  const filteredProducts = useMemo(() => {
+  const handleAddToCart = async (item: InventoryItem) => {
+    setAddingToCart(item.id);
+    try {
+      await addToCart(
+        {
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          shopId: shopId!,
+          price: item.price,
+          stock: item.stock,
+          reservedStock: item.reservedStock,
+        },
+        1
+      );
+      // Show success feedback (you can add a toast notification here)
+      alert(`Added ${item.product.name} to cart!`);
+    } catch (err: any) {
+      console.error("Failed to add to cart:", err);
+      alert(err.message || "Failed to add to cart");
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
+  // Filter inventory based on search query
+  const filteredInventory = useMemo(() => {
     if (!searchQuery.trim()) {
-      return products;
+      return inventory;
     }
 
     const query = searchQuery.toLowerCase();
-    return products.filter((product) => {
+    return inventory.filter((item) => {
       return (
-        product.name.toLowerCase().includes(query) ||
-        (product.description && product.description.toLowerCase().includes(query)) ||
-        (product.category && product.category.toLowerCase().includes(query))
+        item.product.name.toLowerCase().includes(query) ||
+        (item.product.description && item.product.description.toLowerCase().includes(query)) ||
+        (item.product.category && item.product.category.name.toLowerCase().includes(query))
       );
     });
-  }, [products, searchQuery]);
-
-  // if (isLoading) {
-  //   return <div className="container">Loading...</div>;
-  // }
+  }, [inventory, searchQuery]);
 
   if (!isAuthenticated) {
     return null;
@@ -199,9 +224,11 @@ export default function ShopDetailsPage() {
   };
 
   const isAdmin = typeof window !== "undefined" && localStorage.getItem("role") === "ADMIN";
+  const isOwner = !isAdmin && shop && userData?.id === shop.ownerId;
+  const isCustomer = !isAdmin && !isOwner;
 
   if (showDeleteConfirmation) {
-    const productsToDelete = products.filter((p) => selectedProducts.has(p.id));
+    const itemsToDelete = inventory.filter((item) => selectedInventory.has(item.id));
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -224,8 +251,8 @@ export default function ShopDetailsPage() {
           </h2>
 
           <p className="mb-6 text-sm text-gray-600">
-            The following {productsToDelete.length} product(s) will be permanently deleted. This
-            action cannot be undone.
+            The following {itemsToDelete.length} product(s) will be permanently deleted. This action
+            cannot be undone.
           </p>
 
           {/* Product List */}
@@ -233,17 +260,17 @@ export default function ShopDetailsPage() {
             <h3 className="mb-3 text-sm font-semibold text-gray-700">Products to be deleted</h3>
 
             <ul className="space-y-2">
-              {productsToDelete.map((product) => (
+              {itemsToDelete.map((item) => (
                 <li
-                  key={product.id}
+                  key={item.id}
                   className="
               rounded-md border border-yellow-300
               bg-yellow-50 px-4 py-3
             "
                 >
-                  <p className="font-medium text-gray-800">{product.name}</p>
+                  <p className="font-medium text-gray-800">{item.product.name}</p>
                   <p className="text-sm text-gray-600">
-                    Price: ${product.price.toFixed(2)} • Stock: {product.stock}
+                    Price: ${item.price.toFixed(2)} • Stock: {item.stock}
                   </p>
                 </li>
               ))}
@@ -360,16 +387,16 @@ export default function ShopDetailsPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         {/* Products Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Products ({products.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Products ({inventory.length})</h2>
 
           {!isAdmin && (
             <div className="flex gap-3">
-              {selectedProducts.size > 0 && (
+              {selectedInventory.size > 0 && (
                 <button
                   onClick={handleBulkDelete}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
                 >
-                  Delete Selected ({selectedProducts.size})
+                  Delete Selected ({selectedInventory.size})
                 </button>
               )}
 
@@ -388,18 +415,18 @@ export default function ShopDetailsPage() {
           <div className="mb-6">
             <ProductForm
               shopId={shop.id}
-              product={editingProduct}
+              product={editingInventoryItem?.product || null}
               onSave={handleProductSaved}
               onCancel={() => {
                 setShowProductForm(false);
-                setEditingProduct(null);
+                setEditingInventoryItem(null);
               }}
             />
           </div>
         )}
 
         {/* Search */}
-        {products.length > 0 && (
+        {inventory.length > 0 && (
           <div className="mb-6">
             <div className="relative">
               <input
@@ -418,19 +445,19 @@ export default function ShopDetailsPage() {
 
             {searchQuery && (
               <p className="mt-2 text-xs text-gray-600">
-                Found {filteredProducts.length}{" "}
-                {filteredProducts.length === 1 ? "product" : "products"}
+                Found {filteredInventory.length}{" "}
+                {filteredInventory.length === 1 ? "product" : "products"}
               </p>
             )}
           </div>
         )}
 
         {/* Products Table / States */}
-        {products.length === 0 ? (
+        {inventory.length === 0 ? (
           <p className="text-sm text-gray-600">
             No products found. {!isAdmin && "Add your first product!"}
           </p>
-        ) : filteredProducts.length === 0 ? (
+        ) : filteredInventory.length === 0 ? (
           <div className="rounded-md bg-gray-50 p-6 text-center text-sm text-gray-600">
             No products found matching &#34;{searchQuery}&#34;
           </div>
@@ -439,13 +466,13 @@ export default function ShopDetailsPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-gray-600">
-                  {!isAdmin && (
+                  {!(isAdmin || isCustomer) && (
                     <th className="py-2 px-2 w-10">
                       <input
                         type="checkbox"
                         checked={
-                          selectedProducts.size === filteredProducts.length &&
-                          filteredProducts.length > 0
+                          selectedInventory.size === filteredInventory.length &&
+                          filteredInventory.length > 0
                         }
                         onChange={toggleAllSelection}
                       />
@@ -461,32 +488,52 @@ export default function ShopDetailsPage() {
               </thead>
 
               <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    {!isAdmin && (
+                {filteredInventory.map((item) => (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    {!isAdmin && isOwner && (
                       <td className="py-2 px-2">
                         <input
                           type="checkbox"
-                          checked={selectedProducts.has(product.id)}
-                          onChange={() => toggleProductSelection(product.id)}
+                          checked={selectedInventory.has(item.id)}
+                          onChange={() => toggleInventorySelection(item.id)}
                         />
                       </td>
                     )}
-                    <td className="py-2 px-2">{product.name}</td>
-                    <td className="py-2 px-2">{product.description || "-"}</td>
-                    <td className="py-2 px-2">${product.price.toFixed(2)}</td>
-                    <td className="py-2 px-2">{product.stock}</td>
-                    <td className="py-2 px-2">{product.category || "-"}</td>
-                    {!isAdmin && (
+                    <td className="py-2 px-2">{item.product.name}</td>
+                    <td className="py-2 px-2">{item.product.description || "-"}</td>
+                    <td className="py-2 px-2">₹{item.price.toFixed(2)}</td>
+                    <td className="py-2 px-2">{item.stock}</td>
+                    <td className="py-2 px-2">{item.product.category?.name || "-"}</td>
+
+                    {/* Actions column - different for owner vs customer */}
+                    {isOwner && (
                       <td className="py-2 px-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditProduct(product);
+                            handleEditProduct(item);
                           }}
                           className="rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-300 transition"
                         >
                           Edit
+                        </button>
+                      </td>
+                    )}
+                    {isCustomer && (
+                      <td className="py-2 px-2">
+                        <button
+                          onClick={() => handleAddToCart(item)}
+                          disabled={addingToCart === item.id || item.stock === 0}
+                          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          {addingToCart === item.id ? (
+                            "Adding..."
+                          ) : (
+                            <>
+                              <ShoppingCart className="h-3 w-3" />
+                              {item.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                            </>
+                          )}
                         </button>
                       </td>
                     )}

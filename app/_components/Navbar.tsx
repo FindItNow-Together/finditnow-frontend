@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
+import GlobalSearch from "./GlobalSearch";
+import { useEffect } from "react";
 
 const accessRoleTabMapping: Record<string, string[]> = {
   CUSTOMER: ["Discover", "Orders"],
@@ -33,8 +35,13 @@ const authRoutes = [
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+
   const { logout, isAuthenticated, userData, accessRole } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, loadCart } = useCart();
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
 
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     return null;
@@ -61,10 +68,14 @@ export default function Navbar() {
           {/* LEFT */}
           <div className="flex items-center gap-8">
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
-              <span className="text-blue-600">Findit</span>
-              <span className="text-green-600">Now</span>
+              <span className="text-blue-600">Find It</span>
+              <span className="text-green-600"> Now</span>
             </Link>
 
+            {/* Global Search */}
+            <GlobalSearch />
+
+            {/* Tabs */}
             <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">
               {allowedTabs.map((tab) => {
                 const href = tabRouteMapping[tab];
@@ -75,7 +86,7 @@ export default function Navbar() {
                     key={tab}
                     href={href}
                     className={[
-                      "px-4 py-1.5 text-sm font-medium rounded-full transition-all",
+                      "px-4 py-1.5 text-sm font-medium rounded-lg transition-all",
                       isActive
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900 hover:bg-white",
@@ -90,10 +101,11 @@ export default function Navbar() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-4">
+            {/* Cart */}
             {isAuthenticated && (
               <button
                 onClick={() => router.push("/cart")}
-                className="relative p-2 rounded-full hover:bg-gray-100 transition"
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ShoppingCart className="h-5 w-5 text-gray-700" />
                 {itemCount > 0 && (
@@ -108,6 +120,7 @@ export default function Navbar() {
               </button>
             )}
 
+            {/* Profile */}
             <div className="relative group">
               <button className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-semibold shadow-sm">
                 {isAuthenticated && userData?.profileUrl ? (
