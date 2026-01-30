@@ -63,6 +63,11 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!cart) {
+      setStatus("LOADING");
+      return;
+    }
+
     if (cart && cart.cartId === cartId) {
       setCheckoutCart(cart);
       setStatus("READY");
@@ -70,7 +75,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     }
 
     api
-      .get(`/api/cart/${cartId}`, { auth: "private" })
+      .get(`/api/cart/user/me`, { auth: "private" })
       .then(async (res) => {
         if (!res.ok) throw new Error("Invalid cart");
         const data = await res.json();
@@ -79,10 +84,10 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         setStatus("READY");
       })
       .catch(() => {
-        // clearCart();
+        clearCart();
         router.replace("/cart");
       });
-  }, [cartId]);
+  }, [cartId, cart?.cartId]);
 
   useEffect(() => {
     if (!checkoutCart) return;
