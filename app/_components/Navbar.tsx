@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,23 +31,10 @@ const authRoutes = [
 ];
 
 export default function Navbar() {
-  
-  const [mounted, setMounted] = useState(false);
-
   const router = useRouter();
   const pathname = usePathname();
   const { logout, isAuthenticated, userData, accessRole } = useAuth();
   const { itemCount } = useCart();
-
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  
-  if (!mounted) {
-    return null;
-  }
 
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     return null;
@@ -111,9 +97,11 @@ export default function Navbar() {
               >
                 <ShoppingCart className="h-5 w-5 text-gray-700" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
                                    rounded-full bg-blue-600 text-white text-xs
-                                   flex items-center justify-center px-1">
+                                   flex items-center justify-center px-1"
+                  >
                     {itemCount}
                   </span>
                 )}
