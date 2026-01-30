@@ -10,6 +10,8 @@ const statusColors: Record<string, string> = {
   PICKED_UP: "bg-yellow-100 text-yellow-800",
   DELIVERED: "bg-green-100 text-green-800",
   CANCELLED: "bg-red-100 text-red-800",
+  CANCELLED_BY_AGENT: "bg-red-100 text-red-800",
+  UNASSIGNED: "bg-gray-100 text-gray-800",
 };
 
 type AgentStatus = "OFFLINE" | "AVAILABLE" | "ASSIGNED" | "SUSPENDED";
@@ -26,7 +28,7 @@ export default function DeliveriesPage() {
   const [deliveries, setDeliveries] = useState<DeliveryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
 
   const { deliveryApi, get, put } = useApi();
@@ -99,6 +101,58 @@ export default function DeliveriesPage() {
 
   const displayedDeliveries = activeTab === "ACTIVE" ? activeDeliveries : pastDeliveries;
 
+  const handleComplete = async (deliveryId: string) => {
+    if (!confirm("Mark this delivery as completed?")) return;
+
+    try {
+      setActionLoading(deliveryId);
+      await deliveryApi.complete(deliveryId);
+      await fetchDeliveries(); // Refresh the list
+      alert("Delivery completed successfully!");
+    } catch (err) {
+      console.error("Failed to complete delivery", err);
+      alert("Failed to complete delivery. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancel = async (deliveryId: string) => {
+    if (!confirm("Are you sure you want to cancel this delivery?")) return;
+
+    try {
+      setActionLoading(deliveryId);
+      await deliveryApi.cancel(deliveryId);
+      await fetchDeliveries();
+      alert("Delivery cancelled successfully!");
+    } catch (err) {
+      console.error("Failed to cancel delivery", err);
+      alert("Failed to cancel delivery. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleOptOut = async (deliveryId: string) => {
+    if (!confirm("Opt out of this delivery? It will be made available to other agents.")) return;
+
+    try {
+      setActionLoading(deliveryId);
+      await deliveryApi.optOut(deliveryId);
+      await fetchDeliveries();
+      alert("Successfully opted out of delivery!");
+    } catch (err) {
+      console.error("Failed to opt out", err);
+      alert("Failed to opt out. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const canShowActions = (status: string) => {
+    return !["DELIVERED", "CANCELLED", "CANCELLED_BY_AGENT"].includes(status);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-8">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -123,13 +177,12 @@ export default function DeliveriesPage() {
                       disabled={!canSelect}
                       onClick={() => updateAgentStatus(status)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition
-                ${
-                  isCurrent
-                    ? "bg-blue-600 text-white"
-                    : canSelect
-                      ? "bg-gray-100 hover:bg-blue-50 text-gray-800"
-                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                }`}
+                ${isCurrent
+                          ? "bg-blue-600 text-white"
+                          : canSelect
+                            ? "bg-gray-100 hover:bg-blue-50 text-gray-800"
+                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                        }`}
                     >
                       {status}
                     </button>
@@ -150,11 +203,10 @@ export default function DeliveriesPage() {
         <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 mb-6 w-fit">
           <button
             onClick={() => setActiveTab("ACTIVE")}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "ACTIVE"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "ACTIVE"
+              ? "bg-blue-600 text-white shadow-sm"
+              : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             Active
             <span className="ml-2 bg-white/20 px-1.5 py-0.5 rounded-full text-xs">
@@ -163,11 +215,10 @@ export default function DeliveriesPage() {
           </button>
           <button
             onClick={() => setActiveTab("PAST")}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "PAST"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "PAST"
+              ? "bg-blue-600 text-white shadow-sm"
+              : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             Past
           </button>
@@ -205,9 +256,8 @@ export default function DeliveriesPage() {
                             #{delivery.orderId.substring(0, 8)}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              statusColors[delivery.status] || "bg-gray-100 text-gray-800"
-                            }`}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[delivery.status] || "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {delivery.status.replace("_", " ")}
                           </span>
@@ -271,10 +321,46 @@ export default function DeliveriesPage() {
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center group-hover:bg-blue-50/50 transition-colors">
-                    <span className="text-sm font-medium text-blue-600">View Details</span>
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600" />
-                  </div>
+                  {canShowActions(delivery.status) ? (
+                    <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleComplete(delivery.id);
+                          }}
+                          disabled={actionLoading === delivery.id}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          {actionLoading === delivery.id ? "Processing..." : "Complete"}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancel(delivery.id);
+                          }}
+                          disabled={actionLoading === delivery.id}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          {actionLoading === delivery.id ? "Processing..." : "Cancel"}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOptOut(delivery.id);
+                          }}
+                          disabled={actionLoading === delivery.id}
+                          className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          {actionLoading === delivery.id ? "Processing..." : "Opt Out"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+                      <span className="text-sm text-gray-500">Status: {delivery.status.replace(/_/g, " ")}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

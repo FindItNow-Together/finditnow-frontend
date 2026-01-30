@@ -211,6 +211,12 @@ export default function useApi() {
           if (status) params.append("status", status);
           return requestJson("GET", `/api/deliveries/mine?${params.toString()}`);
         },
+        complete: (deliveryId: string) =>
+          requestJson("PUT", `/api/deliveries/${deliveryId}/complete`),
+        cancel: (deliveryId: string) =>
+          requestJson("PUT", `/api/deliveries/${deliveryId}/cancel`),
+        optOut: (deliveryId: string) =>
+          requestJson("PUT", `/api/deliveries/${deliveryId}/opt-out`),
       },
     }),
     [get, post, put, del, requestJson]

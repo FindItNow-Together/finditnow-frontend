@@ -1,4 +1,11 @@
-export type DeliveryStatus = "PENDING" | "ASSIGNED" | "PICKED_UP" | "DELIVERED" | "CANCELLED";
+export type DeliveryStatus =
+  | "PENDING"
+  | "ASSIGNED"
+  | "PICKED_UP"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "CANCELLED_BY_AGENT"
+  | "UNASSIGNED";
 
 export type DeliveryType = "INSTANT" | "SCHEDULED";
 
