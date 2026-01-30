@@ -4,18 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
 import useApi from "@/hooks/useApi";
+import { toast } from "sonner";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: "No Delivery Service",
   IN_HOUSE_DRIVER: "In-house Delivery Driver",
   THIRD_PARTY_PARTNER: "3rd Party Delivery Partner",
-};
-
-const formatCoordinate = (value?: number) => {
-  if (value === undefined || value === null) {
-    return "N/A";
-  }
-  return value.toFixed(6);
 };
 
 export default function AdminDeleteShopsPage() {
@@ -26,16 +20,9 @@ export default function AdminDeleteShopsPage() {
   const [shopsToDelete, setShopsToDelete] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is admin
-    // const role = localStorage.getItem('role');
-    // if (role !== 'ADMIN') {
-    //   router.push('/login');
-    //   return;
-    // }
     loadShops();
   }, []);
 
@@ -45,10 +32,9 @@ export default function AdminDeleteShopsPage() {
       // Handle paginated response
       const shops = response.content || response;
       setShops(Array.isArray(shops) ? shops : []);
-      setError(null);
     } catch (err: any) {
-      setError("Failed to load shops");
       console.error("Error loading shops:", err);
+      toast.error("Failed to load shops. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -56,16 +42,16 @@ export default function AdminDeleteShopsPage() {
 
   const handleToggleShopSelection = (shopId: number) => {
     const newSelectedIds = new Set(selectedShopIds);
-    if (newSelectedIds.has(shopId)) {
-      newSelectedIds.delete(shopId);
-    } else {
-      newSelectedIds.add(shopId);
-    }
+    newSelectedIds.has(shopId)
+      ? newSelectedIds.delete(shopId)
+      : newSelectedIds.add(shopId);
     setSelectedShopIds(newSelectedIds);
   };
 
   const handleDeleteSelected = () => {
-    const selectedShops = shops.filter((shop) => selectedShopIds.has(shop.id));
+    const selectedShops = shops.filter((shop) =>
+      selectedShopIds.has(shop.id)
+    );
     setShopsToDelete(selectedShops);
     setShowConfirmation(true);
   };
@@ -73,22 +59,22 @@ export default function AdminDeleteShopsPage() {
   const handleConfirmDelete = async () => {
     const shopIdsArray = Array.from(selectedShopIds);
     setDeleting(true);
-    setError(null);
 
     try {
       if (shopIdsArray.length === 1) {
         await shopApi.delete(shopIdsArray[0]);
+        toast.success("Shop deleted successfully");
       } else {
         await shopApi.deleteMultiple(shopIdsArray);
+        toast.success("Shops deleted successfully");
       }
 
       setSelectedShopIds(new Set());
       setShowConfirmation(false);
       await loadShops();
-      setError(null);
-    } catch (err: any) {
-      setError("Failed to delete shops");
+    } catch (err) {
       console.error("Error deleting shops:", err);
+      toast.error("Failed to delete shops. Please try again.");
     } finally {
       setDeleting(false);
     }
@@ -97,6 +83,7 @@ export default function AdminDeleteShopsPage() {
   const handleCancelDelete = () => {
     setShowConfirmation(false);
     setShopsToDelete([]);
+    toast.info("Deletion cancelled");
   };
 
   if (loading) {
@@ -124,67 +111,34 @@ export default function AdminDeleteShopsPage() {
   if (showConfirmation) {
     return (
       <div className="container">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "24px" }}>
           <h1>Confirm Deletion</h1>
           <button className="btn btn-secondary" onClick={() => router.push("/admin/dashboard")}>
             Back to Dashboard
           </button>
         </div>
 
-        {error && (
-          <div className="error" style={{ marginBottom: "16px" }}>
-            {error}
-          </div>
-        )}
-
         <div className="card">
-          <h2 style={{ marginBottom: "16px", color: "#dc3545" }}>
+          <h2 style={{ color: "#dc3545", marginBottom: "16px" }}>
             Are you sure you want to delete these shops?
           </h2>
 
           <p style={{ marginBottom: "20px", color: "#666" }}>
-            The following {shopsToDelete.length} shop(s) will be permanently deleted. This will also
-            delete all products in these shops. This action cannot be undone.
+            The following {shopsToDelete.length} shop(s) will be permanently deleted.
+            This action cannot be undone.
           </p>
 
-          <div style={{ marginBottom: "24px" }}>
-            <h3 style={{ marginBottom: "12px" }}>Shops to be deleted:</h3>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {shopsToDelete.map((shop) => (
-                <li
-                  key={shop.id}
-                  style={{
-                    padding: "12px",
-                    marginBottom: "8px",
-                    backgroundColor: "#fff3cd",
-                    border: "1px solid #ffc107",
-                    borderRadius: "4px",
-                  }}
-                >
-                  <strong>{shop.name}</strong>
-                  <br />
-                  <span style={{ color: "#666", fontSize: "14px" }}>
-                    Owner ID: {shop.ownerId} • {shop.address} • {shop.phone}
-                  </span>
-                  <br />
-                  <span style={{ color: "#666", fontSize: "13px" }}>
-                    Open Hours: {shop.openHours}
-                  </span>
-                  <br />
-                  <span style={{ color: "#666", fontSize: "13px" }}>
-                    Delivery: {deliveryOptionLabels[shop.deliveryOption] || shop.deliveryOption}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul style={{ listStyle: "none", padding: 0, marginBottom: "24px" }}>
+            {shopsToDelete.map((shop) => (
+              <li key={shop.id} style={{ padding: "12px", marginBottom: "8px", background: "#fff3cd" }}>
+                <strong>{shop.name}</strong>
+                <br />
+                <span style={{ fontSize: "14px", color: "#666" }}>
+                  {shop.address} • {shop.phone}
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <div style={{ display: "flex", gap: "12px" }}>
             <button
@@ -193,7 +147,7 @@ export default function AdminDeleteShopsPage() {
               disabled={deleting}
               style={{ flex: 1 }}
             >
-              {deleting ? "Deleting..." : "Yes, Delete These Shops"}
+              {deleting ? "Deleting..." : "Yes, Delete"}
             </button>
             <button
               className="btn btn-secondary"
@@ -201,7 +155,7 @@ export default function AdminDeleteShopsPage() {
               disabled={deleting}
               style={{ flex: 1 }}
             >
-              No, Go Back
+              Cancel
             </button>
           </div>
         </div>
@@ -211,99 +165,45 @@ export default function AdminDeleteShopsPage() {
 
   return (
     <div className="container">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "24px" }}>
         <h1>Remove Shops (Admin)</h1>
         <button className="btn btn-secondary" onClick={() => router.push("/admin/dashboard")}>
           Back to Dashboard
         </button>
       </div>
 
-      {error && (
-        <div className="error" style={{ marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
-
       <div className="card" style={{ marginBottom: "24px", backgroundColor: "#fff3cd" }}>
-        <p style={{ margin: 0 }}>
-          <strong>⚠️ Admin Mode:</strong> You are viewing and can delete ALL shops in the system.
-        </p>
+        <strong>⚠️ Admin Mode:</strong> You can delete ALL shops in the system.
       </div>
 
       <div className="card">
-        <h2 style={{ marginBottom: "16px" }}>Select Shops to Delete</h2>
-
-        <div style={{ marginBottom: "20px" }}>
-          {shops.map((shop) => {
-            const isChecked = selectedShopIds.has(shop.id);
-
-            return (
-              <div
-                key={shop.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px",
-                  marginBottom: "12px",
-                  backgroundColor: isChecked ? "#fff3cd" : "#f8f9fa",
-                  border: isChecked ? "2px solid #ffc107" : "1px solid #ddd",
-                  borderRadius: "8px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => handleToggleShopSelection(shop.id)}
-                  style={{
-                    marginRight: "16px",
-                    width: "20px",
-                    height: "20px",
-                    cursor: "pointer",
-                  }}
-                />
-
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, marginBottom: "4px" }}>{shop.name}</h3>
-                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                    Owner ID: {shop.ownerId}
-                  </p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>{shop.address}</p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>Phone: {shop.phone}</p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
-                    Open Hours: {shop.openHours}
-                  </p>
-                  <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
-                    Delivery: {deliveryOptionLabels[shop.deliveryOption] || shop.deliveryOption}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {shops.map((shop) => {
+          const checked = selectedShopIds.has(shop.id);
+          return (
+            <div
+              key={shop.id}
+              style={{
+                padding: "16px",
+                marginBottom: "12px",
+                backgroundColor: checked ? "#fff3cd" : "#f8f9fa",
+                border: checked ? "2px solid #ffc107" : "1px solid #ddd",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => handleToggleShopSelection(shop.id)}
+                style={{ marginRight: "12px" }}
+              />
+              <strong>{shop.name}</strong>
+            </div>
+          );
+        })}
 
         {selectedShopIds.size > 0 && (
-          <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-            <button className="btn btn-danger" onClick={handleDeleteSelected} style={{ flex: 1 }}>
-              Delete Selected ({selectedShopIds.size} shop
-              {selectedShopIds.size > 1 ? "s" : ""})
-            </button>
-            <button className="btn btn-secondary" onClick={() => setSelectedShopIds(new Set())}>
-              Clear Selection
-            </button>
-          </div>
-        )}
-
-        {selectedShopIds.size === 0 && (
-          <p style={{ textAlign: "center", color: "#666", marginTop: "20px" }}>
-            Select shops above to delete them
-          </p>
+          <button className="btn btn-danger" onClick={handleDeleteSelected}>
+            Delete Selected ({selectedShopIds.size})
+          </button>
         )}
       </div>
     </div>

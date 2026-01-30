@@ -66,8 +66,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* LEFT */}
-          <div className="flex items-center gap-8 flex-1">
-            {/* Logo */}
+          <div className="flex items-center gap-8">
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
               <span className="text-blue-600">Find It</span>
               <span className="text-green-600"> Now</span>
@@ -100,7 +99,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/*RIGHT */}
+          {/* RIGHT */}
           <div className="flex items-center gap-4">
             {/* Cart */}
             {isAuthenticated && (
@@ -110,7 +109,11 @@ export default function Navbar() {
               >
                 <ShoppingCart className="h-5 w-5 text-gray-700" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-600 text-white text-xs flex items-center justify-center px-1">
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+                                   rounded-full bg-blue-600 text-white text-xs
+                                   flex items-center justify-center px-1"
+                  >
                     {itemCount}
                   </span>
                 )}
@@ -119,7 +122,7 @@ export default function Navbar() {
 
             {/* Profile */}
             <div className="relative group">
-              <button className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-colors">
+              <button className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-semibold shadow-sm">
                 {isAuthenticated && userData?.profileUrl ? (
                   <img
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
@@ -131,7 +134,7 @@ export default function Navbar() {
                 )}
               </button>
 
-              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 <div className="py-1 text-sm">
                   {isAuthenticated && (
                     <>

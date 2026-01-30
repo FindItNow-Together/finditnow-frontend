@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateableSelect from "@/components/CreateableSelect";
+import { toast } from "sonner";
 
 export default function RegisterShopPage() {
   const router = useRouter();
@@ -19,8 +20,8 @@ export default function RegisterShopPage() {
     name: "",
     address: "",
     phone: "",
-    latitude: 51.505 as number, // Default fallback
-    longitude: -0.09 as number,
+    latitude: 51.505,
+    longitude: -0.09,
     openHours: "",
     deliveryOption: "NO_DELIVERY" as "NO_DELIVERY" | "IN_HOUSE_DRIVER" | "THIRD_PARTY_PARTNER",
     categoryId: undefined as number | undefined,
@@ -28,7 +29,6 @@ export default function RegisterShopPage() {
 
   const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(null);
 
-  // Automatically fetch initial location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
@@ -37,7 +37,9 @@ export default function RegisterShopPage() {
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
         })),
-      (err) => console.error("Location access denied", err)
+      () => {
+        toast.info("Location access denied. You can select location manually.");
+      }
     );
   }, []);
 
@@ -48,6 +50,7 @@ export default function RegisterShopPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const payload = {
         ...formData,
@@ -55,13 +58,16 @@ export default function RegisterShopPage() {
       };
 
       await shopApi.register(payload);
-      if (accessRole == "ADMIN") {
+      toast.success("Shop registered successfully");
+
+      if (accessRole === "ADMIN") {
         router.push("/admin/dashboard");
       } else {
         router.push("/dashboard");
       }
     } catch (err) {
-      alert("Registration failed");
+      console.error("Shop registration failed", err);
+      toast.error("Failed to register shop. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +81,6 @@ export default function RegisterShopPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
-          {/* Basic Info */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Shop Name</label>
             <input
@@ -121,14 +126,13 @@ export default function RegisterShopPage() {
             </div>
           </div>
 
-          {/* Location Picker Section */}
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-blue-800">Location Coordinates</span>
               <button
                 type="button"
                 onClick={() => setShowMapModal(true)}
-                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition"
+                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md"
               >
                 📍 Select on Map
               </button>
@@ -139,7 +143,6 @@ export default function RegisterShopPage() {
             </div>
           </div>
 
-          {/* Other Fields */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Address</label>
             <textarea
@@ -188,12 +191,7 @@ export default function RegisterShopPage() {
           <div className="bg-white rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-bold">Click on the map to set location</h3>
-              <button
-                onClick={() => setShowMapModal(false)}
-                className="text-gray-500 hover:text-black"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowMapModal(false)}>✕</button>
             </div>
 
             <LocationMap
@@ -205,7 +203,7 @@ export default function RegisterShopPage() {
             <div className="p-4 bg-gray-50 flex justify-end">
               <button
                 onClick={() => setShowMapModal(false)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg"
               >
                 Confirm Location
               </button>
