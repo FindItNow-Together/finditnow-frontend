@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
-import { usePathname, useRouter, useSelectedLayoutSegment } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
@@ -31,11 +32,23 @@ const authRoutes = [
 ];
 
 export default function Navbar() {
+  
+  const [mounted, setMounted] = useState(false);
+
   const router = useRouter();
   const pathname = usePathname();
-
   const { logout, isAuthenticated, userData, accessRole } = useAuth();
   const { itemCount } = useCart();
+
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  
+  if (!mounted) {
+    return null;
+  }
 
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     return null;
@@ -61,13 +74,11 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* LEFT */}
           <div className="flex items-center gap-8">
-            {/* Logo */}
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
               <span className="text-blue-600">Findit</span>
               <span className="text-green-600">Now</span>
             </Link>
 
-            {/* Tabs */}
             <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full p-1">
               {allowedTabs.map((tab) => {
                 const href = tabRouteMapping[tab];
@@ -91,9 +102,8 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/*RIGHT */}
+          {/* RIGHT */}
           <div className="flex items-center gap-4">
-            {/* Cart */}
             {isAuthenticated && (
               <button
                 onClick={() => router.push("/cart")}
@@ -101,24 +111,17 @@ export default function Navbar() {
               >
                 <ShoppingCart className="h-5 w-5 text-gray-700" />
                 {itemCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
-                               rounded-full bg-blue-600 text-white text-xs
-                               flex items-center justify-center px-1"
-                  >
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+                                   rounded-full bg-blue-600 text-white text-xs
+                                   flex items-center justify-center px-1">
                     {itemCount}
                   </span>
                 )}
               </button>
             )}
 
-            {/* Profile */}
             <div className="relative group">
-              <button
-                className="flex items-center justify-center w-9 h-9
-                           rounded-full bg-gradient-to-br from-blue-600 to-indigo-600
-                           text-white font-semibold shadow-sm hover:shadow-md transition"
-              >
+              <button className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-semibold shadow-sm">
                 {isAuthenticated && userData?.profileUrl ? (
                   <img
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
@@ -130,12 +133,7 @@ export default function Navbar() {
                 )}
               </button>
 
-              <div
-                className="absolute right-0 mt-2 w-40
-                           bg-white border border-gray-200 rounded-lg shadow-lg
-                           opacity-0 invisible group-hover:opacity-100
-                           group-hover:visible transition-all"
-              >
+              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 <div className="py-1 text-sm">
                   {isAuthenticated && (
                     <>
