@@ -12,13 +12,24 @@ const statusColors: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 };
 
+type AgentStatus = "OFFLINE" | "AVAILABLE" | "ASSIGNED" | "SUSPENDED";
+
+const allowedStatusTransitions: Record<AgentStatus, AgentStatus[]> = {
+  OFFLINE: ["AVAILABLE"],
+  AVAILABLE: ["OFFLINE"],
+  ASSIGNED: ["AVAILABLE"],
+  SUSPENDED: [],
+};
+
 export default function DeliveriesPage() {
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "PAST">("ACTIVE");
   const [deliveries, setDeliveries] = useState<DeliveryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { deliveryApi } = useApi();
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
+
+  const { deliveryApi, get, put } = useApi();
 
   const format = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -26,6 +37,14 @@ export default function DeliveriesPage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const fetchStatus = async () => {
+    const res = await get("/api/delivery-agent/my-status", { auth: "private" });
+
+    const status = await res.json();
+
+    setAgentStatus(status);
   };
 
   const fetchDeliveries = async () => {
@@ -43,7 +62,7 @@ export default function DeliveriesPage() {
         0,
         50
       )) as PagedDeliveryResponse;
-      setDeliveries(response.content || []);
+      setDeliveries(response.deliveries || []);
     } catch (err) {
       console.error("Failed to fetch deliveries", err);
       // setError("Failed to load deliveries");
@@ -53,6 +72,19 @@ export default function DeliveriesPage() {
       setLoading(false);
     }
   };
+
+  const updateAgentStatus = async (nextStatus: AgentStatus) => {
+    try {
+      await put("/api/delivery-agent/my-status", { status: nextStatus }, { auth: "private" });
+      setAgentStatus(nextStatus);
+    } catch (e) {
+      console.error("Failed to update agent status", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
   useEffect(() => {
     fetchDeliveries();
@@ -74,6 +106,45 @@ export default function DeliveriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Deliveries</h1>
           <p className="text-gray-500">Manage your active and past deliveries</p>
         </header>
+
+        {agentStatus && (
+          <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-sm text-gray-500 mb-2">Your current status</p>
+
+            <div className="flex flex-wrap gap-2">
+              {(["OFFLINE", "AVAILABLE", "ASSIGNED", "SUSPENDED"] as AgentStatus[]).map(
+                (status) => {
+                  const isCurrent = status === agentStatus;
+                  const canSelect = allowedStatusTransitions[agentStatus].includes(status);
+
+                  return (
+                    <button
+                      key={status}
+                      disabled={!canSelect}
+                      onClick={() => updateAgentStatus(status)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition
+                ${
+                  isCurrent
+                    ? "bg-blue-600 text-white"
+                    : canSelect
+                      ? "bg-gray-100 hover:bg-blue-50 text-gray-800"
+                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                }`}
+                    >
+                      {status}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+
+            {agentStatus === "SUSPENDED" && (
+              <p className="text-xs text-red-600 mt-3">
+                Your account is suspended. Status changes are disabled.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 mb-6 w-fit">
