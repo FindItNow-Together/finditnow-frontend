@@ -1,11 +1,12 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
-import { usePathname, useRouter, useSelectedLayoutSegment } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 import GlobalSearch from "./GlobalSearch";
+import { useEffect } from "react";
 
 const accessRoleTabMapping: Record<string, string[]> = {
   CUSTOMER: ["Discover", "Orders"],
@@ -36,7 +37,11 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const { logout, isAuthenticated, userData, accessRole } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, loadCart } = useCart();
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
 
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     return null;
@@ -114,9 +119,7 @@ export default function Navbar() {
 
             {/* Profile */}
             <div className="relative group">
-              <button
-                className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-colors"
-              >
+              <button className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-colors">
                 {isAuthenticated && userData?.profileUrl ? (
                   <img
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
@@ -128,9 +131,7 @@ export default function Navbar() {
                 )}
               </button>
 
-              <div
-                className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
-              >
+              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                 <div className="py-1 text-sm">
                   {isAuthenticated && (
                     <>

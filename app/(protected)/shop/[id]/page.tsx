@@ -137,15 +137,18 @@ export default function ShopDetailsPage() {
   const handleAddToCart = async (item: InventoryItem) => {
     setAddingToCart(item.id);
     try {
-      await addToCart({
-        id: item.id,
-        productId: item.product.id,
-        productName: item.product.name,
-        shopId: shopId!,
-        price: item.price,
-        stock: item.stock,
-        reservedStock: item.reservedStock,
-      }, 1);
+      await addToCart(
+        {
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          shopId: shopId!,
+          price: item.price,
+          stock: item.stock,
+          reservedStock: item.reservedStock,
+        },
+        1
+      );
       // Show success feedback (you can add a toast notification here)
       alert(`Added ${item.product.name} to cart!`);
     } catch (err: any) {
@@ -463,7 +466,7 @@ export default function ShopDetailsPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-gray-600">
-                  {!isAdmin && (
+                  {!(isAdmin || isCustomer) && (
                     <th className="py-2 px-2 w-10">
                       <input
                         type="checkbox"

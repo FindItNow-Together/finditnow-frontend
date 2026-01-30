@@ -16,7 +16,7 @@ export function getBaseUrl(envUrl?: string): string {
   try {
     if (globalThis.URL?.canParse?.(baseUrl)) {
       // Ensure trailing slash so URL resolution behaves consistently
-      return baseUrl
+      return baseUrl;
     }
     throw new Error("Base url incorrect");
   } catch (err) {
@@ -216,7 +216,12 @@ export default function useApi() {
         const errBody = await res
           .clone()
           .json()
-          .catch(async () => ({ raw: await res.clone().text().catch(() => "") }));
+          .catch(async () => ({
+            raw: await res
+              .clone()
+              .text()
+              .catch(() => ""),
+          }));
         throw new Error(`API Error: ${res.status} ${JSON.stringify(errBody)}`);
       }
       return res.json();
@@ -271,29 +276,24 @@ export default function useApi() {
           requestJson(shopBaseUrl, "POST", `/api/shop/${shopId}/inventory/add`, data),
         updateInventory: (id: number, data: any) =>
           requestJson(shopBaseUrl, "PUT", `/api/shop/inventory/${id}`, data),
-        deleteInventory: (id: number) =>
-          requestJson(shopBaseUrl, "DELETE", `/api/inventory/${id}`),
+        deleteInventory: (id: number) => requestJson(shopBaseUrl, "DELETE", `/api/inventory/${id}`),
         reserveStock: (id: number, quantity: number) =>
-          requestJson(
-            shopBaseUrl,
-            "POST",
-            `/api/inventory/${id}/reserve?quantity=${quantity}`
-          ),
+          requestJson(shopBaseUrl, "POST", `/api/inventory/${id}/reserve?quantity=${quantity}`),
         releaseStock: (id: number, quantity: number) =>
-          requestJson(
-            shopBaseUrl,
-            "POST",
-            `/api/inventory/${id}/release?quantity=${quantity}`
-          ),
+          requestJson(shopBaseUrl, "POST", `/api/inventory/${id}/release?quantity=${quantity}`),
       },
       cartApi: {
-        getCart: (userId: string, shopId: string) =>
-          requestJson(shopBaseUrl, "GET", `/api/cart/user/${userId}/shop/${shopId}`),
+        // Use the recommended /me endpoint that doesn't require userId in path
+        getCart: () => requestJson(shopBaseUrl, "GET", `/api/cart/user/me`),
+
         addItem: (data: any) => requestJson(shopBaseUrl, "POST", "/api/cart/add", data),
+
         updateItem: (itemId: string, data: any) =>
           requestJson(shopBaseUrl, "PUT", `/api/cart/item/${itemId}`, data),
+
         removeItem: (itemId: string) =>
           requestJson(shopBaseUrl, "DELETE", `/api/cart/item/${itemId}`),
+
         clearCart: (cartId: string) =>
           requestJson(shopBaseUrl, "DELETE", `/api/cart/${cartId}/clear`),
       },
@@ -307,11 +307,7 @@ export default function useApi() {
         getAll: (page = 0, size = 10) =>
           requestJson(shopBaseUrl, "GET", `/api/product?page=${page}&size=${size}`),
         search: (query: string) =>
-          requestJson(
-            shopBaseUrl,
-            "GET",
-            `/api/product/search?query=${encodeURIComponent(query)}`
-          ),
+          requestJson(shopBaseUrl, "GET", `/api/product/search?query=${encodeURIComponent(query)}`),
         getById: (id: number) => requestJson(shopBaseUrl, "GET", `/api/product/${id}`),
         update: (id: number, data: any) =>
           requestJson(shopBaseUrl, "PUT", `/api/product/${id}`, data),
@@ -325,4 +321,3 @@ export default function useApi() {
 
   return api;
 }
-  

@@ -3,15 +3,20 @@ export interface CartItem {
   inventoryId: number;
   quantity: number;
   addedAt?: string;
+  productId: number;
+  productName: string;
+  price: number;
+  itemSubtotal: number;
 }
 
 export interface Cart {
   cartId: string;
   userId: string;
   shopId: number;
-  status: 'ACTIVE' | 'CHECKED_OUT';
+  status: "ACTIVE" | "CHECKED_OUT";
   items: CartItem[];
   totalItems: number;
+  subtotal: number;
 }
 
 export interface AddToCartRequest {
@@ -28,7 +33,7 @@ export interface CartResponse {
   cartId: string;
   userId: string;
   shopId: number;
-  status: 'ACTIVE' | 'CHECKED_OUT';
+  status: "ACTIVE" | "CHECKED_OUT";
   items: CartItem[];
   totalItems: number;
 }

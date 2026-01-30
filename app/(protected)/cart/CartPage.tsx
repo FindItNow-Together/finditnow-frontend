@@ -46,7 +46,7 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (!cart) return;
-    router.push(`/checkout/${cart.id}`);
+    router.push(`/checkout/${cart.cartId}`);
   };
 
   // Empty cart state
@@ -94,7 +94,7 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-4">
             {cart.items.map((item) => (
               <div
-                key={item.id}
+                key={item.itemId}
                 className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow"
               >
                 <div className="flex gap-4">
@@ -108,8 +108,8 @@ export default function CartPage() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 bg-gray-50 rounded-lg border border-gray-200">
                       <button
-                        onClick={() => handleDecreaseQuantity(item.id)}
-                        disabled={processingItem === item.id || isLoading}
+                        onClick={() => handleDecreaseQuantity(item.itemId)}
+                        disabled={processingItem === item.itemId || isLoading}
                         className="p-2 hover:bg-gray-100 rounded-l-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Decrease quantity"
                       >
@@ -119,8 +119,8 @@ export default function CartPage() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => handleIncreaseQuantity(item.id)}
-                        disabled={processingItem === item.id || isLoading}
+                        onClick={() => handleIncreaseQuantity(item.itemId)}
+                        disabled={processingItem === item.itemId || isLoading}
                         className="p-2 hover:bg-gray-100 rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Increase quantity"
                       >
@@ -130,8 +130,8 @@ export default function CartPage() {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={processingItem === item.id || isLoading}
+                      onClick={() => handleRemoveItem(item.itemId)}
+                      disabled={processingItem === item.itemId || isLoading}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label="Remove item"
                     >

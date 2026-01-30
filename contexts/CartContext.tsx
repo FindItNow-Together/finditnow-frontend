@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
 import useApi from "@/hooks/useApi";
-import { Cart, CartItem, CartResponse } from "@/types/cart";
-import { useAuth } from "@/contexts/AuthContext";
+import { Cart, CartResponse } from "@/types/cart";
 
 // Shop inventory item that gets added to cart
 export interface ShopInventoryItem {
@@ -32,7 +23,7 @@ interface CartContextType {
 
   setCart: (cart: Cart) => void;
   clearCartState: () => void;
-  loadCart: (shopId: number) => Promise<void>;
+  loadCart: () => Promise<void>;
 
   // Cart operations
   addToCart: (inventoryItem: ShopInventoryItem, quantity?: number) => Promise<void>;
@@ -54,7 +45,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const api = useApi();
-  const { userData } = useAuth();
 
   const setCart = useCallback((c: Cart) => {
     setCartState(c);
@@ -80,29 +70,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   // Load cart for a specific shop
-  const loadCart = useCallback(
-    async (shopId: number) => {
-      if (!userData?.id) return;
+  // UPDATED: No longer needs userData.id, uses /me endpoint
+  const loadCart = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.cartApi.getCart(userData.id, String(shopId)) as CartResponse;
-        setCartState(response as Cart);
-      } catch (err: any) {
-        // Cart doesn't exist yet - this is okay
-        if (err.message.includes("404")) {
-          setCartState(null);
-        } else {
-          setError(err.message);
-        }
-      } finally {
-        setIsLoading(false);
+    try {
+      const response = (await api.cartApi.getCart()) as CartResponse;
+      setCartState(response as Cart);
+    } catch (err: any) {
+      // Cart doesn't exist yet - this is okay
+      if (err.message.includes("404")) {
+        setCartState(null);
+      } else {
+        setError(err.message);
       }
-    },
-    [userData, api]
-  );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api]);
 
   // Add item to cart
   const addToCart = useCallback(
@@ -134,11 +120,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         // Call API to add to cart
-        const response = await api.cartApi.addItem({
+        const response = (await api.cartApi.addItem({
           inventoryId: inventoryItem.id,
           shopId: inventoryItem.shopId,
           quantity,
-        }) as CartResponse;
+        })) as CartResponse;
 
         setCartState(response as Cart);
       } catch (err: any) {
@@ -152,6 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   // Remove item from cart
+  // UPDATED: No longer reloads cart, backend now returns updated cart
   const removeFromCart = useCallback(
     async (cartItemId: string) => {
       if (!cart) return;
@@ -163,9 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         await api.cartApi.removeItem(cartItemId);
 
         // Reload the cart to get updated state
-        if (userData?.id) {
-          await loadCart(cart.shopId);
-        }
+        await loadCart();
       } catch (err: any) {
         setError(err.message);
         throw err;
@@ -173,7 +158,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [cart, api, userData, loadCart]
+    [cart, api, loadCart]
   );
 
   // Update quantity to specific value
@@ -189,7 +174,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const response = await api.cartApi.updateItem(cartItemId, { quantity }) as CartResponse;
+        const response = (await api.cartApi.updateItem(cartItemId, { quantity })) as CartResponse;
         setCartState(response as Cart);
       } catch (err: any) {
         setError(err.message);
