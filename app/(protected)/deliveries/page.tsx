@@ -6,10 +6,13 @@ import useApi from "@/hooks/useApi";
 import { DeliveryResponse, PagedDeliveryResponse } from "@/types/delivery";
 
 const statusColors: Record<string, string> = {
+  CREATED: "bg-gray-100 text-gray-800",
   ASSIGNED: "bg-blue-100 text-blue-800",
   PICKED_UP: "bg-yellow-100 text-yellow-800",
+  IN_TRANSIT: "bg-purple-100 text-purple-800",
   DELIVERED: "bg-green-100 text-green-800",
   CANCELLED: "bg-red-100 text-red-800",
+  FAILED: "bg-red-100 text-red-800",
   CANCELLED_BY_AGENT: "bg-red-100 text-red-800",
   UNASSIGNED: "bg-gray-100 text-gray-800",
 };

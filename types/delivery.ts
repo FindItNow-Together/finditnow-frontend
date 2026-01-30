@@ -1,9 +1,11 @@
 export type DeliveryStatus =
-  | "PENDING"
+  | "CREATED"
   | "ASSIGNED"
   | "PICKED_UP"
+  | "IN_TRANSIT"
   | "DELIVERED"
   | "CANCELLED"
+  | "FAILED"
   | "CANCELLED_BY_AGENT"
   | "UNASSIGNED";
 
