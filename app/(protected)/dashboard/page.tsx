@@ -137,8 +137,7 @@ export default function DashboardPage() {
 
         {searchQuery && (
           <p className="mt-2 text-sm text-gray-600">
-            Found {filteredShops.length}{" "}
-            {filteredShops.length === 1 ? "shop" : "shops"}
+            Found {filteredShops.length} {filteredShops.length === 1 ? "shop" : "shops"}
           </p>
         )}
       </div>
@@ -157,7 +156,7 @@ export default function DashboardPage() {
                 key={shop.id}
                 shop={shop}
                 productCount={products.length}
-                topProducts={products.map((p) => p.name)}
+                // topProducts={products.map((p) => p.name)}
               />
             );
           })}
