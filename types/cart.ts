@@ -1,29 +1,22 @@
 export interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productImage?: string;
-  price: number;
+  itemId: string;
+  inventoryId: number;
   quantity: number;
-  shopId: string;
-  shopName?: string;
+  addedAt?: string;
 }
 
 export interface Cart {
-  id: string;
+  cartId: string;
   userId: string;
-  shopId: string;
-  shopName?: string;
+  shopId: number;
+  status: 'ACTIVE' | 'CHECKED_OUT';
   items: CartItem[];
-  subtotal: number;
   totalItems: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface AddToCartRequest {
-  productId: string;
-  shopId: string;
+  inventoryId: number;
+  shopId: number;
   quantity: number;
 }
 
@@ -32,7 +25,10 @@ export interface UpdateCartItemRequest {
 }
 
 export interface CartResponse {
-  data: Cart;
-  message?: string;
+  cartId: string;
+  userId: string;
+  shopId: number;
+  status: 'ACTIVE' | 'CHECKED_OUT';
+  items: CartItem[];
+  totalItems: number;
 }
-

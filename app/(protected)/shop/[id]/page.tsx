@@ -6,8 +6,10 @@ import { Shop } from "@/types/shop";
 import { InventoryItem } from "@/types/inventory";
 import ProductForm from "@/components/ProductForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import useApi from "@/hooks/useApi";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { ShoppingCart } from "lucide-react";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: "No Delivery Service",
@@ -27,6 +29,7 @@ export default function ShopDetailsPage() {
   const shopId = params?.id ? Number(params.id) : null;
 
   const { inventoryApi, shopApi, productApi } = useApi();
+  const { addToCart, itemCount } = useCart();
 
   const [shop, setShop] = useState<Shop | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -36,11 +39,12 @@ export default function ShopDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userData } = useAuth();
 
   const [selectedInventory, setSelectedInventory] = useState<Set<number>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && shopId) {
@@ -130,6 +134,28 @@ export default function ShopDetailsPage() {
     loadInventory();
   };
 
+  const handleAddToCart = async (item: InventoryItem) => {
+    setAddingToCart(item.id);
+    try {
+      await addToCart({
+        id: item.id,
+        productId: item.product.id,
+        productName: item.product.name,
+        shopId: shopId!,
+        price: item.price,
+        stock: item.stock,
+        reservedStock: item.reservedStock,
+      }, 1);
+      // Show success feedback (you can add a toast notification here)
+      alert(`Added ${item.product.name} to cart!`);
+    } catch (err: any) {
+      console.error("Failed to add to cart:", err);
+      alert(err.message || "Failed to add to cart");
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
   // Filter inventory based on search query
   const filteredInventory = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -145,10 +171,6 @@ export default function ShopDetailsPage() {
       );
     });
   }, [inventory, searchQuery]);
-
-  // if (isLoading) {
-  //   return <div className="container">Loading...</div>;
-  // }
 
   if (!isAuthenticated) {
     return null;
@@ -199,6 +221,8 @@ export default function ShopDetailsPage() {
   };
 
   const isAdmin = typeof window !== "undefined" && localStorage.getItem("role") === "ADMIN";
+  const isOwner = !isAdmin && shop && userData?.id === shop.ownerId;
+  const isCustomer = !isAdmin && !isOwner;
 
   if (showDeleteConfirmation) {
     const itemsToDelete = inventory.filter((item) => selectedInventory.has(item.id));
@@ -463,7 +487,7 @@ export default function ShopDetailsPage() {
               <tbody>
                 {filteredInventory.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    {!isAdmin && (
+                    {!isAdmin && isOwner && (
                       <td className="py-2 px-2">
                         <input
                           type="checkbox"
@@ -474,10 +498,12 @@ export default function ShopDetailsPage() {
                     )}
                     <td className="py-2 px-2">{item.product.name}</td>
                     <td className="py-2 px-2">{item.product.description || "-"}</td>
-                    <td className="py-2 px-2">${item.price.toFixed(2)}</td>
+                    <td className="py-2 px-2">₹{item.price.toFixed(2)}</td>
                     <td className="py-2 px-2">{item.stock}</td>
                     <td className="py-2 px-2">{item.product.category?.name || "-"}</td>
-                    {!isAdmin && (
+
+                    {/* Actions column - different for owner vs customer */}
+                    {isOwner && (
                       <td className="py-2 px-2">
                         <button
                           onClick={(e) => {
@@ -487,6 +513,24 @@ export default function ShopDetailsPage() {
                           className="rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-300 transition"
                         >
                           Edit
+                        </button>
+                      </td>
+                    )}
+                    {isCustomer && (
+                      <td className="py-2 px-2">
+                        <button
+                          onClick={() => handleAddToCart(item)}
+                          disabled={addingToCart === item.id || item.stock === 0}
+                          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          {addingToCart === item.id ? (
+                            "Adding..."
+                          ) : (
+                            <>
+                              <ShoppingCart className="h-3 w-3" />
+                              {item.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                            </>
+                          )}
                         </button>
                       </td>
                     )}
