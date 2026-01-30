@@ -7,6 +7,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/app/_components/Navbar";
 import { User, UserRole } from "@/types/user";
 import { cookies } from "next/headers";
+import ToasterProvider from "@/app/_components/ToasterProvider";
+
 
 import { URL } from "node:url";
 import Script from "next/script";
@@ -97,6 +99,9 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+
+        <ToasterProvider />
+        
         <AuthProvider auth={auth}>
           <CartProvider>
             <Navbar />

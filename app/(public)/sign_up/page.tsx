@@ -3,50 +3,63 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
+import { toast } from "sonner";
 
 function SignUp() {
   const api = useApi();
-  const [error, setError] = useState("");
-  const [isAdminPending, setIsAdminPending] = useState(false); // State for Admin view
+  const [isAdminPending, setIsAdminPending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>();
   const router = useRouter();
 
   async function signUpUser(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const payload = Object.fromEntries(formData.entries());
-    console.log("Payload   ", payload);
+
     try {
       const res = await api.post("/api/auth/signup", payload);
-      const data = await res.json();
+      let data;
+
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server error. Please try again later.");
+      }
 
       if (data.error) {
         if (data.error === "account_not_verified") {
           router.push("/verify_otp/" + data.credId);
           return;
         }
-        setError((data.error as string).split("_").join(" "));
+
+        toast.error(
+          (data.error as string).split("_").join(" ") || "Signup failed"
+        );
         return;
       }
 
-      // Check if the selected role was ADMIN
+      // ADMIN role → manual approval
       if (payload.role === "ADMIN") {
+        toast.success("Registration submitted for admin approval");
         setIsAdminPending(true);
-      } else {
-        router.push(`/verify_otp/${data.credId}`);
+        return;
       }
+
+      toast.success("Account created. Verify your email.");
+      router.push(`/verify_otp/${data.credId}`);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      toast.error(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  // --- ADMIN PENDING COMPONENT ---
+  // --- ADMIN PENDING VIEW ---
   if (isAdminPending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-400 p-4">
@@ -70,8 +83,7 @@ function SignUp() {
           </div>
           <h2 className="text-2xl font-bold text-gray-800">Registration Received</h2>
           <p className="text-gray-600">
-            Admin accounts require manual approval. Please contact the system administrator to
-            verify your credentials.
+            Admin accounts require manual approval. Please contact the system administrator.
           </p>
           <button
             onClick={() => router.push("/login")}
@@ -100,6 +112,7 @@ function SignUp() {
             className="w-full p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             required
           />
+
           <input
             type="email"
             name="email"
@@ -110,25 +123,29 @@ function SignUp() {
 
           {/* Role Selection */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
-            {["CUSTOMER", "SHOP_OWNER", "DELIVERY_AGENT", "ADMIN"].map((role) => (
-              <label
-                key={role}
-                className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${selectedRole === (role == "SHOP_OWNER" ? "shop" : role)
-                    ? "bg-white shadow-sm text-black"
-                    : "text-gray-500"
+            {["CUSTOMER", "SHOP_OWNER", "DELIVERY_AGENT", "ADMIN"].map((role) => {
+              const value = role === "SHOP_OWNER" ? "shop" : role;
+              return (
+                <label
+                  key={role}
+                  className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${
+                    selectedRole === value
+                      ? "bg-white shadow-sm text-black"
+                      : "text-gray-500"
                   }`}
-              >
-                <input
-                  type="radio"
-                  name="role"
-                  value={role == "SHOP_OWNER" ? "shop" : role}
-                  className="hidden"
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  checked={selectedRole === (role == "SHOP_OWNER" ? "shop" : role)}
-                />
-                {role.replace("_", " ")}
-              </label>
-            ))}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={value}
+                    className="hidden"
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    checked={selectedRole === value}
+                  />
+                  {role.replace("_", " ")}
+                </label>
+              );
+            })}
           </div>
 
           <input
@@ -138,12 +155,6 @@ function SignUp() {
             className="w-full p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             required
           />
-
-          {error && (
-            <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
-              {error}
-            </div>
-          )}
 
           <button
             disabled={loading}
@@ -155,7 +166,7 @@ function SignUp() {
 
         <div className="text-center text-sm text-gray-600">
           Already have an account?
-          <a className="text-black font-medium ml-2 cursor-pointer hover:underline" href={"/login"}>
+          <a className="text-black font-medium ml-2 cursor-pointer hover:underline" href="/login">
             Sign In
           </a>
         </div>
