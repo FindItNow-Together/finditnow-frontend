@@ -97,10 +97,9 @@ export default function Profile() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`
                       flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                      ${isActive
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "text-gray-700 hover:bg-gray-50 border border-transparent"
                       }
                     `}
                   >
@@ -140,8 +139,8 @@ export default function Profile() {
             )}
             {activeTab === "cards" && <CardsSection />}
             {activeTab === "addresses" && <AddressesSection />}
-            {role === "shopOwner" && activeTab === "shops" && <ShopsSection />}
-            {role === "deliveryAgent" && activeTab === "past-deliveries" && (
+            {role === "SHOP" && activeTab === "shops" && <ShopsSection />}
+            {role === "DELIVERY_AGENT" && activeTab === "past-deliveries" && (
               <PastDeliveriesSection />
             )}
           </main>

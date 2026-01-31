@@ -2,9 +2,16 @@
 
 import { Product } from "@/types/product";
 
+type ProductRow = Product & {
+  // When coming from inventory mapping, these may be present
+  price?: number;
+  stock?: number;
+  category?: any;
+};
+
 interface ProductTableProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
+  products: ProductRow[];
+  onEdit: (product: ProductRow) => void;
   onDelete: (id: number) => void;
 }
 
@@ -30,9 +37,9 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
           <tr key={product.id}>
             <td>{product.name}</td>
             <td>{product.description || "-"}</td>
-            <td>${product.price.toFixed(2)}</td>
-            <td>{product.stock}</td>
-            <td>{product.category || "-"}</td>
+            <td>{typeof product.price === "number" ? `$${product.price.toFixed(2)}` : "-"}</td>
+            <td>{typeof product.stock === "number" ? product.stock : "-"}</td>
+            <td>{product.category?.name ?? product.category ?? "-"}</td>
             <td>
               <button
                 className="btn btn-secondary"

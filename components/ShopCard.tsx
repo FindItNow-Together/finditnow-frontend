@@ -25,16 +25,10 @@ export default function ShopCard({ shop, productCount = 0, topProducts = [] }: S
   return (
     <div
       onClick={handleCardClick}
-      className="
-    h-full cursor-pointer rounded-xl border border-gray-200
-    bg-white p-5
-    shadow-sm transition-all duration-300
-    hover:-translate-y-1 hover:shadow-md
-    flex flex-col
-  "
+      className="h-full cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md flex flex-col"
     >
       {/* Shop Name */}
-      <h2 className="mb-3 text-xl font-semibold text-gray-800">{shop.name}</h2>
+      <h2 className="mb-3 text-xl font-semibold text-gray-900">{shop.name}</h2>
 
       {/* Address */}
       <p className="mb-2 flex items-center gap-1.5 text-sm text-gray-600">
@@ -56,13 +50,7 @@ export default function ShopCard({ shop, productCount = 0, topProducts = [] }: S
 
       {/* Delivery Option */}
       <div className="mb-3">
-        <span
-          className="
-      inline-block rounded-full
-      bg-blue-50 px-3 py-1
-      text-xs font-medium text-blue-700
-    "
-        >
+        <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
           {deliveryOptionLabels[shop.deliveryOption] || shop.deliveryOption}
         </span>
       </div>
@@ -93,7 +81,9 @@ export default function ShopCard({ shop, productCount = 0, topProducts = [] }: S
       </div>
 
       {/* Footer CTA */}
-      <div className="mt-3 text-right text-sm font-medium text-blue-600">View Details →</div>
+      <div className="mt-3 text-right text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+        View Details →
+      </div>
     </div>
   );
 }

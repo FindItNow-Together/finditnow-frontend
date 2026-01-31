@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
-import { Cart, useCart } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { UserAddress } from "@/types/user";
 import { Edit3, MapPin, Plus } from "lucide-react";
 import Modal from "@/app/_components/Modal";
 import CreateAddressModal from "@/app/_components/CreateAddressModal";
+import { Cart } from "@/types/cart";
 
 type Pricing = {
   deliveryFee: number;
@@ -35,6 +36,8 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [eta, setEta] = useState<DeliveryETA | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash_on_delivery">("online");
+  const [deliveryType, setDeliveryType] = useState<"PARTNER" | "TAKEAWAY">("PARTNER");
+  const [instructions, setInstructions] = useState("");
   const [status, setStatus] = useState<PageStatus>("LOADING");
   const [error, setError] = useState<string | null>(null);
 
@@ -62,14 +65,19 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (cart && cart.id === cartId) {
+    if (!cart) {
+      setStatus("LOADING");
+      return;
+    }
+
+    if (cart && cart.cartId === cartId) {
       setCheckoutCart(cart);
       setStatus("READY");
       return;
     }
 
     api
-      .get(`/api/cart/${cartId}`, { auth: "private" })
+      .get(`/api/cart/user/me`, { auth: "private" })
       .then(async (res) => {
         if (!res.ok) throw new Error("Invalid cart");
         const data = await res.json();
@@ -81,16 +89,20 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         clearCart();
         router.replace("/cart");
       });
-  }, [cartId]);
+  }, [cartId, cart?.cartId]);
 
   useEffect(() => {
     if (!checkoutCart) return;
 
     api
-      .get(`/api/cart/${checkoutCart.id}/pricing`, { auth: "private" })
-      .then((res) => (res.ok ? res.json() : null))
+      .get(`/api/cart/${checkoutCart.cartId}/pricing`, { auth: "private" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Invalid cart");
+        return res.json();
+      })
       .then(setPricing)
-      .catch(() => {
+      .catch((err) => {
+        console.log(err.message);
         setPricing({ deliveryFee: 100, payable: 1100, tax: 1000 });
       });
   }, [checkoutCart]);
@@ -106,16 +118,38 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   useEffect(() => {
     if (!checkoutCart || !selectedAddressId) return;
 
+    if (deliveryType === "TAKEAWAY") {
+      setPricing((prev) =>
+        prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
+      );
+      return;
+    }
+
     setEta(null);
 
+    // Fetch Delivery Quote
     api
-      .get(`/api/delivery/estimate?shopId=${checkoutCart.shopId}&addressId=${selectedAddressId}`, {
+      .get(`/api/orders/quote?shopId=${checkoutCart.shopId}&addressId=${selectedAddressId}`, {
         auth: "private",
       })
       .then((res) => (res.ok ? res.json() : null))
-      .then(setEta)
+      .then((data) => {
+        if (data && pricing) {
+          const newFee = data.amount;
+          setPricing((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  deliveryFee: newFee,
+                  payable: prev.payable - prev.deliveryFee + newFee,
+                }
+              : null
+          );
+          setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
+        }
+      })
       .catch(() => {});
-  }, [selectedAddressId]);
+  }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Re-run when address or delivery type changes
 
   const canPlaceOrder = useMemo(() => {
     return status === "READY" && checkoutCart && pricing && selectedAddressId !== null;
@@ -130,9 +164,11 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       const orderRes = await api.post(
         "/api/orders/from-cart",
         {
-          cartId: checkoutCart.id,
+          cartId: checkoutCart.cartId,
           addressId: selectedAddressId,
           paymentMethod,
+          deliveryType,
+          instructions,
         },
         { auth: "private" }
       );
@@ -277,11 +313,59 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         )}
       </section>
 
+      {/* DELIVERY OPTIONS */}
+      <section className="bg-white rounded-lg border border-gray-200 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Options</h2>
+
+        <div className="space-y-3 mb-4">
+          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "PARTNER"}
+              onChange={() => setDeliveryType("PARTNER")}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <span className="font-medium">Standard Delivery</span>
+              <p className="text-sm text-gray-500">Delivered by our partner</p>
+            </div>
+          </label>
+
+          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "TAKEAWAY"}
+              onChange={() => setDeliveryType("TAKEAWAY")}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <span className="font-medium">Self Pickup (Takeaway)</span>
+              <p className="text-sm text-gray-500">Pick up from store</p>
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Delivery Instructions
+          </label>
+          <textarea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            placeholder="Where should we leave the package?"
+            className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+            rows={2}
+          />
+        </div>
+      </section>
+
       {/* CART */}
       <section>
         <h2 className="font-semibold mb-2">Order Summary</h2>
         {checkoutCart.items.map((i) => (
-          <div key={i.id} className="flex justify-between text-sm">
+          <div key={i.itemId} className="flex justify-between text-sm">
             <span>
               {i.productName} × {i.quantity}
             </span>
@@ -293,8 +377,12 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       {/* TOTAL */}
       <section className="border-t pt-3">
         <div className="flex justify-between font-semibold">
+          <span>Delivery Fee</span>
+          <span>{pricing.deliveryFee > 0 ? `₹${pricing.deliveryFee}` : "Free"}</span>
+        </div>
+        <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>₹{pricing.payable}</span>
+          <span>₹{pricing?.payable}</span>
         </div>
       </section>
 
@@ -325,7 +413,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         onClick={placeOrder}
         className="w-full bg-blue-600 text-white py-3 rounded disabled:opacity-50"
       >
-        {paymentMethod === "online" ? `Pay ₹${pricing.payable} & Place Order` : "Place Order"}
+        {paymentMethod === "online" ? `Pay ₹${pricing?.payable} & Place Order` : "Place Order"}
       </button>
 
       {showAddressSelectModal && (

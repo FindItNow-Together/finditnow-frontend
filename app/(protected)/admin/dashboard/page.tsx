@@ -2,17 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
-import { Product } from "@/types/product";
+import { Shop, PagedResponse } from "@/types/shop";
+import { InventoryItem } from "@/types/inventory";
 import ShopCard from "@/components/ShopCard";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 
 export default function AdminDashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const { accessRole, setAccessRole, setAccessToken, logout } = useAuth();
-  const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
-  const { productApi, shopApi } = useApi();
+  const { logout } = useAuth();
+  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(
+    new Map()
+  );
+  const { inventoryApi, shopApi } = useApi();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,24 +26,29 @@ export default function AdminDashboardPage() {
 
   const loadAllShops = async () => {
     try {
-      const shops = (await shopApi.getAllShops()) as Shop[];
-      setShops(shops);
+      const response = (await shopApi.getAllShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
-      const productsMap = new Map<number, Product[]>();
+      const inventoryMap = new Map<number, InventoryItem[]>();
       await Promise.all(
-        shops.map(async (shop) => {
+        shopsList.map(async (shop) => {
           try {
-            const products = (await productApi.getByShop(shop.id)) as Product[];
-            productsMap.set(shop.id, products);
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as InventoryItem[];
+            inventoryMap.set(shop.id, inventory);
           } catch {
-            productsMap.set(shop.id, []);
+            inventoryMap.set(shop.id, []);
           }
         })
       );
 
-      setShopsWithProducts(productsMap);
-    } catch {
+      setShopsWithInventory(inventoryMap);
+    } catch (err) {
       setError("Failed to load shops");
+      console.error("Error loading shops:", err);
     } finally {
       setLoading(false);
     }
@@ -61,12 +68,14 @@ export default function AdminDashboardPage() {
         shop.address.toLowerCase().includes(query) ||
         shop.phone.toLowerCase().includes(query);
 
-      const products = shopsWithProducts.get(shop.id) || [];
-      const matchesProducts = products.some((p) => p.name.toLowerCase().includes(query));
+      const inventory = shopsWithInventory.get(shop.id) || [];
+      const matchesProducts = inventory.some((item) =>
+        item.product.name.toLowerCase().includes(query)
+      );
 
       return matchesShop || matchesProducts;
     });
-  }, [shops, searchQuery, shopsWithProducts]);
+  }, [shops, searchQuery, shopsWithInventory]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8 text-gray-600">Loading shops...</div>;
@@ -101,7 +110,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold text-green-600">
-              {Array.from(shopsWithProducts.values()).reduce((sum, p) => sum + p.length, 0)}
+              {Array.from(shopsWithInventory.values()).reduce((sum, inv) => sum + inv.length, 0)}
             </p>
             <p className="text-sm text-gray-600">Total Products</p>
           </div>
@@ -169,13 +178,13 @@ export default function AdminDashboardPage() {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
           {filteredShops.map((shop) => {
-            const products = shopsWithProducts.get(shop.id) || [];
+            const inventory = shopsWithInventory.get(shop.id) || [];
             return (
               <ShopCard
                 key={shop.id}
                 shop={shop}
-                productCount={products.length}
-                topProducts={products.map((p) => p.name)}
+                productCount={inventory.length}
+                topProducts={inventory.map((item) => item.product.name)}
               />
             );
           })}

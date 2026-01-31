@@ -2,10 +2,16 @@ export type Opportunity = {
   product: {
     id: string;
     name: string;
-    image?: string;
+    imageUrl?: string;
     minPrice: number;
     shopCount: number;
     deliveryCount: number;
+  };
+  inventory: {
+    inventoryId: number;
+    stock: number;
+    price: number;
+    reservedStock: number;
   };
   shop: {
     id: string;

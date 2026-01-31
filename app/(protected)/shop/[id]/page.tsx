@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
-import { Product } from "@/types/product";
+import { InventoryItem } from "@/types/inventory";
+import { OrderResponse } from "@/types/order";
 import ProductForm from "@/components/ProductForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import useApi from "@/hooks/useApi";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { ShoppingCart } from "lucide-react";
 
 const deliveryOptionLabels: Record<string, string> = {
   NO_DELIVERY: "No Delivery Service",
@@ -26,28 +29,124 @@ export default function ShopDetailsPage() {
   const params = useParams();
   const shopId = params?.id ? Number(params.id) : null;
 
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi, productApi, get } = useApi();
+  const { addToCart, itemCount } = useCart();
 
   const [shop, setShop] = useState<Shop | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingInventoryItem, setEditingInventoryItem] = useState<InventoryItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userData } = useAuth();
 
-  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
+  const [selectedInventory, setSelectedInventory] = useState<Set<number>>(new Set());
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
+
+  // Dashboard Stats State
+  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [earnings, setEarnings] = useState<number>(0);
+  const [recentProducts, setRecentProducts] = useState<string[]>([]);
+  const [orderPage, setOrderPage] = useState(0);
+  const [hasMoreOrders, setHasMoreOrders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && shopId) {
       loadShopDetails();
-      loadProducts();
+      loadInventory();
+      loadDashboardData();
+
+      // Polling for real-time updates (every 30 seconds)
+      const intervalId = setInterval(() => {
+        refreshDashboardData();
+      }, 30000);
+
+      return () => clearInterval(intervalId);
     }
   }, [isAuthenticated, shopId]);
+
+  const loadDashboardData = async () => {
+    loadOrders(0, true);
+    loadEarnings();
+    loadRecentProducts();
+  };
+
+  const refreshDashboardData = async () => {
+    setRefreshing(true);
+    // Refresh earnings and recent products
+    // For orders, we only refresh the first page to check for new ones
+    try {
+      await Promise.all([
+        loadOrders(0, true), // Reset orders list with fresh data
+        loadEarnings(),
+        loadRecentProducts(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const loadOrders = async (page: number, reset: boolean = false) => {
+    if (!shopId) return;
+    try {
+      if (!reset) setLoadingOrders(true);
+      const res = await get(`/api/orders/shop/${shopId}?page=${page}&size=10`, { auth: "private" });
+      if (res.ok) {
+        const data = await res.json();
+        const newOrders = data.content;
+
+        if (reset) {
+          setOrders(newOrders);
+          setOrderPage(0);
+        } else {
+          setOrders((prev) => [...prev, ...newOrders]);
+          setOrderPage(page);
+        }
+
+        setHasMoreOrders(!data.last);
+      }
+    } catch (err) {
+      console.error("Failed to load orders", err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const loadEarnings = async () => {
+    if (!shopId) return;
+    try {
+      const res = await get(`/api/orders/shop/${shopId}/earnings`, { auth: "private" });
+      if (res.ok) {
+        const amount = await res.json();
+        setEarnings(amount || 0);
+      }
+    } catch (err) {
+      console.error("Failed to load earnings", err);
+    }
+  };
+
+  const loadRecentProducts = async () => {
+    if (!shopId) return;
+    try {
+      const res = await get(`/api/orders/shop/${shopId}/recent-products`, { auth: "private" });
+      if (res.ok) {
+        const products = await res.json();
+        setRecentProducts(products);
+      }
+    } catch (err) {
+      console.error("Failed to load recent products", err);
+    }
+  };
+
+  const handleLoadMoreOrders = () => {
+    loadOrders(orderPage + 1);
+  };
 
   const loadShopDetails = async () => {
     if (!shopId) return;
@@ -62,41 +161,41 @@ export default function ShopDetailsPage() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadInventory = async () => {
     if (!shopId) return;
 
     try {
-      const prods = (await productApi.getByShop(shopId)) as Product[];
-      setProducts(prods);
-      setSelectedProducts(new Set()); // Clear selection on reload
+      const items = (await inventoryApi.getShopInventory(shopId)) as InventoryItem[];
+      setInventory(items);
+      setSelectedInventory(new Set()); // Clear selection on reload
     } catch (err: any) {
-      setError("Failed to load products");
+      setError("Failed to load inventory");
     }
   };
 
   const handleAddProduct = () => {
-    setEditingProduct(null);
+    setEditingInventoryItem(null);
     setShowProductForm(true);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+  const handleEditProduct = (item: InventoryItem) => {
+    setEditingInventoryItem(item);
     setShowProductForm(true);
   };
 
   const handleBulkDelete = () => {
-    if (selectedProducts.size === 0) return;
+    if (selectedInventory.size === 0) return;
     setShowDeleteConfirmation(true);
   };
 
   const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
-      await productApi.deleteMultiple(Array.from(selectedProducts));
+      await productApi.deleteMultiple(Array.from(selectedInventory));
       setShowDeleteConfirmation(false);
-      loadProducts();
+      loadInventory();
     } catch (err: any) {
-      setError("Failed to delete products");
+      setError("Failed to delete inventory items");
     } finally {
       setDeleting(false);
     }
@@ -106,49 +205,70 @@ export default function ShopDetailsPage() {
     setShowDeleteConfirmation(false);
   };
 
-  const toggleProductSelection = (productId: number) => {
-    const newSelection = new Set(selectedProducts);
-    if (newSelection.has(productId)) {
-      newSelection.delete(productId);
+  const toggleInventorySelection = (inventoryId: number) => {
+    const newSelection = new Set(selectedInventory);
+    if (newSelection.has(inventoryId)) {
+      newSelection.delete(inventoryId);
     } else {
-      newSelection.add(productId);
+      newSelection.add(inventoryId);
     }
-    setSelectedProducts(newSelection);
+    setSelectedInventory(newSelection);
   };
 
   const toggleAllSelection = () => {
-    if (selectedProducts.size === filteredProducts.length) {
-      setSelectedProducts(new Set());
+    if (selectedInventory.size === filteredInventory.length) {
+      setSelectedInventory(new Set());
     } else {
-      setSelectedProducts(new Set(filteredProducts.map((p) => p.id)));
+      setSelectedInventory(new Set(filteredInventory.map((item) => item.id)));
     }
   };
 
   const handleProductSaved = () => {
     setShowProductForm(false);
-    setEditingProduct(null);
-    loadProducts();
+    setEditingInventoryItem(null);
+    loadInventory();
   };
 
-  // Filter products based on search query
-  const filteredProducts = useMemo(() => {
+  const handleAddToCart = async (item: InventoryItem) => {
+    setAddingToCart(item.id);
+    try {
+      await addToCart(
+        {
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          shopId: shopId!,
+          price: item.price,
+          stock: item.stock,
+          reservedStock: item.reservedStock,
+        },
+        1
+      );
+      // Show success feedback (you can add a toast notification here)
+      alert(`Added ${item.product.name} to cart!`);
+    } catch (err: any) {
+      console.error("Failed to add to cart:", err);
+      alert(err.message || "Failed to add to cart");
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
+  // Filter inventory based on search query
+  const filteredInventory = useMemo(() => {
     if (!searchQuery.trim()) {
-      return products;
+      return inventory;
     }
 
     const query = searchQuery.toLowerCase();
-    return products.filter((product) => {
+    return inventory.filter((item) => {
       return (
-        product.name.toLowerCase().includes(query) ||
-        (product.description && product.description.toLowerCase().includes(query)) ||
-        (product.category && product.category.toLowerCase().includes(query))
+        item.product.name.toLowerCase().includes(query) ||
+        (item.product.description && item.product.description.toLowerCase().includes(query)) ||
+        (item.product.category && item.product.category.name.toLowerCase().includes(query))
       );
     });
-  }, [products, searchQuery]);
-
-  // if (isLoading) {
-  //   return <div className="container">Loading...</div>;
-  // }
+  }, [inventory, searchQuery]);
 
   if (!isAuthenticated) {
     return null;
@@ -199,9 +319,11 @@ export default function ShopDetailsPage() {
   };
 
   const isAdmin = typeof window !== "undefined" && localStorage.getItem("role") === "ADMIN";
+  const isOwner = !isAdmin && shop && userData?.id === shop.ownerId;
+  const isCustomer = !isAdmin && !isOwner;
 
   if (showDeleteConfirmation) {
-    const productsToDelete = products.filter((p) => selectedProducts.has(p.id));
+    const itemsToDelete = inventory.filter((item) => selectedInventory.has(item.id));
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -224,8 +346,8 @@ export default function ShopDetailsPage() {
           </h2>
 
           <p className="mb-6 text-sm text-gray-600">
-            The following {productsToDelete.length} product(s) will be permanently deleted. This
-            action cannot be undone.
+            The following {itemsToDelete.length} product(s) will be permanently deleted. This action
+            cannot be undone.
           </p>
 
           {/* Product List */}
@@ -233,17 +355,17 @@ export default function ShopDetailsPage() {
             <h3 className="mb-3 text-sm font-semibold text-gray-700">Products to be deleted</h3>
 
             <ul className="space-y-2">
-              {productsToDelete.map((product) => (
+              {itemsToDelete.map((item) => (
                 <li
-                  key={product.id}
+                  key={item.id}
                   className="
               rounded-md border border-yellow-300
               bg-yellow-50 px-4 py-3
             "
                 >
-                  <p className="font-medium text-gray-800">{product.name}</p>
+                  <p className="font-medium text-gray-800">{item.product.name}</p>
                   <p className="text-sm text-gray-600">
-                    Price: ${product.price.toFixed(2)} • Stock: {product.stock}
+                    Price: ${item.price.toFixed(2)} • Stock: {item.stock}
                   </p>
                 </li>
               ))}
@@ -356,20 +478,154 @@ export default function ShopDetailsPage() {
         </div>
       </div>
 
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Earnings Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-500">Total Earnings</h3>
+            {refreshing && <span className="text-xs text-blue-500 animate-pulse">Updating...</span>}
+          </div>
+          <p className="text-3xl font-bold text-gray-900">
+            {new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              maximumFractionDigits: 0,
+            }).format(earnings)}
+          </p>
+          <p className="mt-2 text-xs text-gray-500">Lifetime earnings from all completed orders</p>
+        </div>
+
+        {/* Recent Products Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-medium text-gray-500">Recently Ordered Products</h3>
+          {recentProducts.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recentProducts.map((name, i) => (
+                <span
+                  key={i}
+                  className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No recent orders yet</p>
+          )}
+        </div>
+      </div>
+
+      {/* Order History */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Order History ({orders.length}+)</h2>
+          <button
+            onClick={() => refreshDashboardData()}
+            className="text-sm text-blue-600 hover:text-blue-800"
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing..." : "Refresh Now"}
+          </button>
+        </div>
+
+        {orders.length === 0 ? (
+          <p className="text-sm text-gray-600">No orders found.</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Order ID</th>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium">Customer</th>
+                    <th className="px-4 py-3 font-medium">Total</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Payment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {/* We don't have customer name in OrderResponse yet, using ID or placeholder */}
+                        User
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {new Intl.NumberFormat("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 0,
+                        }).format(order.totalAmount)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                           ${
+                             order.status === "created"
+                               ? "bg-gray-100 text-gray-800"
+                               : order.status === "delivered"
+                                 ? "bg-green-100 text-green-800"
+                                 : order.status === "cancelled"
+                                   ? "bg-red-100 text-red-800"
+                                   : "bg-blue-100 text-blue-800"
+                           }
+                         `}
+                        >
+                          {order.status.replace(/_/g, " ").toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {order.paymentStatus === "paid" ? (
+                          <span className="text-green-600 font-medium">Paid</span>
+                        ) : (
+                          <span className="text-yellow-600">Pending</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {hasMoreOrders && (
+              <div className="text-center pt-2">
+                <button
+                  onClick={handleLoadMoreOrders}
+                  disabled={loadingOrders}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                >
+                  {loadingOrders ? "Loading..." : "Load More Orders"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Products */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         {/* Products Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Products ({products.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Products ({inventory.length})</h2>
 
           {!isAdmin && (
             <div className="flex gap-3">
-              {selectedProducts.size > 0 && (
+              {selectedInventory.size > 0 && (
                 <button
                   onClick={handleBulkDelete}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
                 >
-                  Delete Selected ({selectedProducts.size})
+                  Delete Selected ({selectedInventory.size})
                 </button>
               )}
 
@@ -388,18 +644,18 @@ export default function ShopDetailsPage() {
           <div className="mb-6">
             <ProductForm
               shopId={shop.id}
-              product={editingProduct}
+              product={editingInventoryItem?.product || null}
               onSave={handleProductSaved}
               onCancel={() => {
                 setShowProductForm(false);
-                setEditingProduct(null);
+                setEditingInventoryItem(null);
               }}
             />
           </div>
         )}
 
         {/* Search */}
-        {products.length > 0 && (
+        {inventory.length > 0 && (
           <div className="mb-6">
             <div className="relative">
               <input
@@ -418,19 +674,19 @@ export default function ShopDetailsPage() {
 
             {searchQuery && (
               <p className="mt-2 text-xs text-gray-600">
-                Found {filteredProducts.length}{" "}
-                {filteredProducts.length === 1 ? "product" : "products"}
+                Found {filteredInventory.length}{" "}
+                {filteredInventory.length === 1 ? "product" : "products"}
               </p>
             )}
           </div>
         )}
 
         {/* Products Table / States */}
-        {products.length === 0 ? (
+        {inventory.length === 0 ? (
           <p className="text-sm text-gray-600">
             No products found. {!isAdmin && "Add your first product!"}
           </p>
-        ) : filteredProducts.length === 0 ? (
+        ) : filteredInventory.length === 0 ? (
           <div className="rounded-md bg-gray-50 p-6 text-center text-sm text-gray-600">
             No products found matching &#34;{searchQuery}&#34;
           </div>
@@ -439,13 +695,13 @@ export default function ShopDetailsPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-gray-600">
-                  {!isAdmin && (
+                  {!(isAdmin || isCustomer) && (
                     <th className="py-2 px-2 w-10">
                       <input
                         type="checkbox"
                         checked={
-                          selectedProducts.size === filteredProducts.length &&
-                          filteredProducts.length > 0
+                          selectedInventory.size === filteredInventory.length &&
+                          filteredInventory.length > 0
                         }
                         onChange={toggleAllSelection}
                       />
@@ -461,32 +717,52 @@ export default function ShopDetailsPage() {
               </thead>
 
               <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    {!isAdmin && (
+                {filteredInventory.map((item) => (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    {!isAdmin && isOwner && (
                       <td className="py-2 px-2">
                         <input
                           type="checkbox"
-                          checked={selectedProducts.has(product.id)}
-                          onChange={() => toggleProductSelection(product.id)}
+                          checked={selectedInventory.has(item.id)}
+                          onChange={() => toggleInventorySelection(item.id)}
                         />
                       </td>
                     )}
-                    <td className="py-2 px-2">{product.name}</td>
-                    <td className="py-2 px-2">{product.description || "-"}</td>
-                    <td className="py-2 px-2">${product.price.toFixed(2)}</td>
-                    <td className="py-2 px-2">{product.stock}</td>
-                    <td className="py-2 px-2">{product.category || "-"}</td>
-                    {!isAdmin && (
+                    <td className="py-2 px-2">{item.product.name}</td>
+                    <td className="py-2 px-2">{item.product.description || "-"}</td>
+                    <td className="py-2 px-2">₹{item.price.toFixed(2)}</td>
+                    <td className="py-2 px-2">{item.stock}</td>
+                    <td className="py-2 px-2">{item.product.category?.name || "-"}</td>
+
+                    {/* Actions column - different for owner vs customer */}
+                    {isOwner && (
                       <td className="py-2 px-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditProduct(product);
+                            handleEditProduct(item);
                           }}
                           className="rounded-md bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-300 transition"
                         >
                           Edit
+                        </button>
+                      </td>
+                    )}
+                    {isCustomer && (
+                      <td className="py-2 px-2">
+                        <button
+                          onClick={() => handleAddToCart(item)}
+                          disabled={addingToCart === item.id || item.stock === 0}
+                          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          {addingToCart === item.id ? (
+                            "Adding..."
+                          ) : (
+                            <>
+                              <ShoppingCart className="h-3 w-3" />
+                              {item.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                            </>
+                          )}
                         </button>
                       </td>
                     )}

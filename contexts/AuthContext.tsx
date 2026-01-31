@@ -49,7 +49,7 @@ export function AuthProvider({
       accessToken != null &&
       accessToken.length > 0 &&
       accessRole != null &&
-      ["ADMIN", "CUSTOMER", "SHOP", "DELIVERY", "UNASSIGNED"].includes(accessRole)
+      ["ADMIN", "CUSTOMER", "SHOP", "DELIVERY_AGENT", "UNASSIGNED"].includes(accessRole)
     );
   }, [accessToken, accessRole]);
 

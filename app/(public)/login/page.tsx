@@ -1,19 +1,18 @@
 "use client";
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import useApi, { publicBaseUrl } from "@/hooks/useApi";
+import { toast } from "sonner";
 
 function Login() {
-  const [error, setError] = useState("");
   const router = useRouter();
   const { setAuth } = useAuth();
   const api = useApi();
 
   const login = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
 
     try {
       const formData = new FormData(e.currentTarget);
@@ -23,7 +22,13 @@ function Login() {
         auth: "public",
       });
 
-      const data = await res.json();
+      let data;
+      try {
+           data = await res.json();
+       } catch {
+        toast.error("Invalid response from server. Please try again later.");
+        return;
+      }
 
       // Business-logic outcomes (expected states)
       if (res.status === 409) {
@@ -33,11 +38,11 @@ function Login() {
         }
 
         if (data.error === "password_login_not_supported") {
-          setError("Use google login or reset password");
+          toast.error("Use google login or reset password");
           return;
         }
 
-        setError(data.error?.split("_").join(" ") || "Login failed");
+        toast.error(data.error?.split("_").join(" ") || "Login failed");
         return;
       }
 
@@ -50,7 +55,7 @@ function Login() {
       await setAuth(data.accessToken, data.profile);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      toast.error(err instanceof Error ? err.message : "Unexpected error");
     }
   };
 
@@ -91,11 +96,6 @@ function Login() {
             </a>
           </div>
 
-          {error ? (
-            <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
-              {error}
-            </div>
-          ) : null}
           <button
             type="submit"
             className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition"
