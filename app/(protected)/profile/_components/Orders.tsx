@@ -67,6 +67,7 @@ export default function OrdersSection({ orders, onOrdersLoad }: OrdersSectionPro
       },
       packed: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
       created: { bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-200" },
+      paid: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
       cancelled: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
     };
 
@@ -206,11 +207,18 @@ export default function OrdersSection({ orders, onOrdersLoad }: OrdersSectionPro
                         ₹{order.totalAmount.toFixed(2)}
                       </td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text} border ${statusColors.border}`}
-                        >
-                          {formatStatus(order.status)}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium w-fit ${statusColors.bg} ${statusColors.text} border ${statusColors.border}`}
+                          >
+                            {formatStatus(order.status)}
+                          </span>
+                          {order.status?.toLowerCase() === "cancelled" && order.cancellationReason && (
+                            <span className="text-xs text-gray-500 max-w-[200px] truncate" title={order.cancellationReason}>
+                              {order.cancellationReason}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-right">
                         <a
