@@ -3,35 +3,51 @@ import { FormEvent } from "react";
 import { FormLevel } from "@/app/(public)/forgot_password/page";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
+import { toast } from "sonner";
 
 type FormLevelProps = {
   setFormLevel: (arg: FormLevel) => void;
   formLevel: FormLevel;
 };
 
-export function SendVerification(props: FormLevelProps) {
+export function SendVerification({ formLevel, setFormLevel }: FormLevelProps) {
   const api = useApi();
-  const { formLevel, setFormLevel } = props;
+
   const sendVerificationEmail = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const res = await api.post("/api/auth/sendresettoken", Object.fromEntries(formData.entries()), {
-      auth: "public",
-    });
 
-    const data = await res.json();
+    try {
+      const res = await api.post(
+        "/api/auth/sendresettoken",
+        Object.fromEntries(formData.entries()),
+        { auth: "public" }
+      );
 
-    if (data.error) {
-      setFormLevel({ ...formLevel, error: data.error.split("_").join(" ") });
-      return;
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      if (data.error) {
+        toast.error(data.error.split("_").join(" "));
+        return;
+      }
+
+      toast.success("Verification code sent to your email");
+      setFormLevel({
+        name: "verify",
+        data: { email: formData.get("email") as string },
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
     }
-    setFormLevel({
-      ...formLevel,
-      error: undefined,
-      name: "verify",
-      data: { email: formData.get("email") as string },
-    });
   };
+
   return (
     <form className="flex flex-col space-y-4 text-gray-800" onSubmit={sendVerificationEmail}>
       <input
@@ -42,11 +58,6 @@ export function SendVerification(props: FormLevelProps) {
         required
       />
 
-      {formLevel.error ? (
-        <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
-          {formLevel.error}
-        </div>
-      ) : null}
       <button
         type="submit"
         className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition"
@@ -57,28 +68,39 @@ export function SendVerification(props: FormLevelProps) {
   );
 }
 
-export function VerifyPasswordToken(props: FormLevelProps) {
+export function VerifyPasswordToken({ formLevel, setFormLevel }: FormLevelProps) {
   const api = useApi();
-  const { formLevel, setFormLevel } = props;
+
   const verifyToken = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const res = await api.post(
-      "/api/auth/verifyresettoken",
-      Object.fromEntries(formData.entries()),
-      {
-        auth: "public",
+    try {
+      const res = await api.post(
+        "/api/auth/verifyresettoken",
+        Object.fromEntries(formData.entries()),
+        { auth: "public" }
+      );
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Invalid server response.");
       }
-    );
 
-    const data = await res.json();
+      if (data.error) {
+        toast.error(data.error.split("_").join(" "));
+        return;
+      }
 
-    if (data.error) {
-      setFormLevel({ ...formLevel, error: data.error.split("_").join(" ") });
-      return;
+      toast.success("Token verified. You can now reset your password.");
+      setFormLevel({ name: "set", data: formLevel.data });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Verification failed. Please try again."
+      );
     }
-    setFormLevel({ ...formLevel, error: undefined, name: "set" });
   };
 
   return (
@@ -93,11 +115,6 @@ export function VerifyPasswordToken(props: FormLevelProps) {
         required
       />
 
-      {formLevel.error ? (
-        <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
-          {formLevel.error}
-        </div>
-      ) : null}
       <button
         type="submit"
         className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition"
@@ -108,35 +125,49 @@ export function VerifyPasswordToken(props: FormLevelProps) {
   );
 }
 
-export function ResetPassword(props: FormLevelProps) {
+export function ResetPassword({ formLevel, setFormLevel }: FormLevelProps) {
   const api = useApi();
   const router = useRouter();
-  const { formLevel, setFormLevel } = props;
-  const verifyToken = async (e: FormEvent<HTMLFormElement>) => {
+
+  const resetPassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
     if (formData.get("newPassword") !== formData.get("confirmPwd")) {
-      setFormLevel({ ...formLevel, error: "Passwords dont match" });
+      toast.error("Passwords do not match");
       return;
     }
-    const res = await api.post("/api/auth/resetpassword", Object.fromEntries(formData.entries()), {
-      auth: "public",
-    });
 
-    const data = await res.json();
+    try {
+      const res = await api.post(
+        "/api/auth/resetpassword",
+        Object.fromEntries(formData.entries()),
+        { auth: "public" }
+      );
 
-    if (data.error) {
-      setFormLevel({ ...formLevel, error: data.error.split("_").join(" ") });
-      return;
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      if (data.error) {
+        toast.error(data.error.split("_").join(" "));
+        return;
+      }
+
+      toast.success("Password reset successfully. Redirecting to login...");
+      setTimeout(() => router.push("/login"), 800);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Reset failed. Please try again."
+      );
     }
-    setFormLevel({ ...formLevel, error: undefined, name: "set" });
-
-    setTimeout(() => router.push("/login"), 500);
   };
 
   return (
-    <form className="flex flex-col space-y-4 text-gray-800" onSubmit={verifyToken}>
+    <form className="flex flex-col space-y-4 text-gray-800" onSubmit={resetPassword}>
       <input
         type="password"
         name="newPassword"
@@ -148,16 +179,11 @@ export function ResetPassword(props: FormLevelProps) {
       <input
         type="password"
         name="confirmPwd"
-        placeholder="Reenter password..."
+        placeholder="Re-enter password..."
         className="w-full p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
         required
       />
 
-      {formLevel.error ? (
-        <div className="w-full p-3 rounded-md bg-red-100 text-red-700 text-sm border border-red-300">
-          {formLevel.error}
-        </div>
-      ) : null}
       <button
         type="submit"
         className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-900 transition"

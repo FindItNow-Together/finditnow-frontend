@@ -40,7 +40,11 @@ export default function VerifyOtp({ credId }: { credId: string }) {
 
     const data = await res.json();
 
-    await setAuth(data.accessToken, data.profile);
+    if (data.accessToken) {
+      await setAuth(data.accessToken, data.profile);
+    } else {
+      throw new Error("VerifyOtp failed, try again!");
+    }
   };
 
   const resendVerificationEmail = async () => {

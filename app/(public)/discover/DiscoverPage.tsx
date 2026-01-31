@@ -28,14 +28,14 @@ export default function DiscoverClient() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => { }
+      () => {}
     );
   }, []);
 
   const fetchOpportunities = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (debQuery) params.set("q", debQuery);
+      if (debQuery) params.set("q", String(debQuery));
       if (category !== "all") params.set("category", category);
       if (userLoc) {
         params.set("lat", String(userLoc.lat));
@@ -73,6 +73,11 @@ export default function DiscoverClient() {
     new Map(opportunities.map((o) => [o.product.id, o.product])).values()
   );
 
+  /* derive inventories */
+  const inventories = Array.from(
+    new Map(opportunities.map((o) => [o.inventory?.inventoryId, o.inventory])).values()
+  );
+
   /* derive map locations */
   const mapLocations: MapLocation<Opportunity>[] = opportunities.map((o) => ({
     id: `${o.shop.id}-${o.product.id}`,
@@ -97,7 +102,11 @@ export default function DiscoverClient() {
 
       <main className="max-w-7xl mx-auto px-6 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-6">
         <section className="lg:col-span-7">
-          <ProductList products={products} opportunities={opportunities} />
+          <ProductList
+            products={products}
+            opportunities={opportunities}
+            inventories={inventories}
+          />
         </section>
 
         <aside className="lg:col-span-5">

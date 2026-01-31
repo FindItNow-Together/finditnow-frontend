@@ -6,7 +6,9 @@ export default function PastDeliveriesSection() {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Past Deliveries</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* DESKTOP VIEW */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800/50">
@@ -46,6 +48,22 @@ export default function PastDeliveriesSection() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* MOBILE VIEW */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {[1, 2, 3].map((d) => (
+            <div key={d} className="p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-900 dark:text-gray-100">DELV-{1000 + d}</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹250</span>
+              </div>
+              <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                <span>Order #ORD{d.toString().padStart(4, "0")}</span>
+                <span>19 Dec 2025</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

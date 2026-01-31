@@ -2,18 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shop } from "@/types/shop";
-import { Product } from "@/types/product";
+import { PagedResponse, Shop } from "@/types/shop";
+import { InventoryItem } from "@/types/inventory";
 import ShopCard from "@/components/ShopCard";
 import useApi from "@/hooks/useApi";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [shopsWithProducts, setShopsWithProducts] = useState<Map<number, Product[]>>(new Map());
+  const [shopsWithInventory, setShopsWithInventory] = useState<Map<number, InventoryItem[]>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
-  const { productApi, shopApi } = useApi();
+  const { inventoryApi, shopApi } = useApi();
   const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -22,54 +24,55 @@ export default function DashboardPage() {
 
   const loadShops = async () => {
     try {
-      const shops: Shop[] = (await shopApi.getMyShops()) as Shop[];
-      setShops(shops || []);
+      const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
+      // Handle paginated response
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
+      setShops(shopsList);
 
-      // Load products for each shop
-      const productsMap = new Map<number, Product[]>();
+      // Load inventory for each shop
+      const inventoryMap = new Map<number, InventoryItem[]>();
       await Promise.all(
         shops.map(async (shop) => {
           try {
-            const products = (await productApi.getByShop(shop.id)) as Product[];
-            productsMap.set(shop.id, products);
+            const inventory = (await inventoryApi.getShopInventory(shop.id)) as InventoryItem[];
+            inventoryMap.set(shop.id, inventory);
           } catch (err) {
-            console.error(`Failed to load products for shop ${shop.id}`, err);
-            productsMap.set(shop.id, []);
+            console.error(`Failed to load inventory for shop ${shop.id}`, err);
+            inventoryMap.set(shop.id, []);
           }
         })
       );
 
-      setShopsWithProducts(productsMap);
-    } catch (err: any) {
-      setError("Failed to load shops");
+      setShopsWithInventory(inventoryMap);
+    } catch (err) {
+      console.error("Failed to load shops", err);
+      toast.error("Failed to load shops. Please refresh the page.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter shops based on search query
   const filteredShops = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return shops;
-    }
+    if (!searchQuery.trim()) return shops;
 
     const query = searchQuery.toLowerCase();
     return shops.filter((shop) => {
-      // Search in shop name, address, and phone
       const matchesShop =
         shop.name.toLowerCase().includes(query) ||
         shop.address.toLowerCase().includes(query) ||
         shop.phone.toLowerCase().includes(query);
 
-      // Search in product names
-      const products = shopsWithProducts.get(shop.id) || [];
-      const matchesProducts = products.some((product) =>
-        product.name.toLowerCase().includes(query)
+      // Search in product names from inventory
+      const inventory = shopsWithInventory.get(shop.id) || [];
+      const matchesProducts = inventory.some((item) =>
+        item.product.name.toLowerCase().includes(query)
       );
 
       return matchesShop || matchesProducts;
     });
-  }, [shops, searchQuery, shopsWithProducts]);
+  }, [shops, searchQuery, shopsWithInventory]);
 
   if (loading) {
     return <div className="container">Loading shops...</div>;
@@ -78,10 +81,8 @@ export default function DashboardPage() {
   if (shops.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Main Content (Empty State) */}
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="max-w-md w-full text-center">
-            {/* Decorative Icon/Graphic */}
             <div className="mb-6 inline-flex items-center justify-center w-24 h-24 bg-blue-100 rounded-full">
               <span className="text-4xl">🏪</span>
             </div>
@@ -89,15 +90,14 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">No shops found</h1>
             <p className="text-gray-600 mb-8">
               Your system currently has no registered shops. Get started by creating your first
-              storefront to manage products and inventory.
+              storefront.
             </p>
 
             <button
               onClick={() => router.push("/register-shop")}
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm hover:shadow-md"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition"
             >
-              <span className="mr-2 text-xl">+</span>
-              Add Your First Shop
+              + Add Your First Shop
             </button>
           </div>
         </main>
@@ -107,13 +107,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 mb-6">
         <button
           onClick={() => router.push("/register-shop")}
@@ -130,7 +123,6 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Search Bar */}
       <div className="mb-6">
         <div className="relative">
           <input
@@ -138,14 +130,8 @@ export default function DashboardPage() {
             placeholder="Search shops by name, address, phone, or products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="
-          w-full rounded-lg border-2 border-gray-300
-          px-4 py-3 pr-10 text-base
-          focus:outline-none focus:border-blue-500
-          transition
-        "
+            className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 pr-10 focus:border-blue-500 focus:outline-none"
           />
-
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         </div>
 
@@ -156,23 +142,21 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Shop Cards Grid */}
       {filteredShops.length === 0 ? (
         <div className="rounded-lg border bg-white p-6 text-center text-gray-600">
-          No shops found matching &quot; {searchQuery} &quot;
+          No shops found matching &quot;{searchQuery}&quot;
         </div>
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           {filteredShops.map((shop) => {
-            const products = shopsWithProducts.get(shop.id) || [];
-            const topProducts = products.map((p) => p.name);
+            const products = shopsWithInventory.get(shop.id) || [];
 
             return (
               <ShopCard
                 key={shop.id}
                 shop={shop}
                 productCount={products.length}
-                topProducts={topProducts}
+                // topProducts={products.map((p) => p.name)}
               />
             );
           })}
