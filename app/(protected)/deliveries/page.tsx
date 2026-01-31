@@ -7,6 +7,7 @@ import { DeliveryResponse, PagedDeliveryResponse } from "@/types/delivery";
 
 const statusColors: Record<string, string> = {
   CREATED: "bg-gray-100 text-gray-800",
+  PENDING_ACCEPTANCE: "bg-orange-100 text-orange-800",
   ASSIGNED: "bg-blue-100 text-blue-800",
   PICKED_UP: "bg-yellow-100 text-yellow-800",
   IN_TRANSIT: "bg-purple-100 text-purple-800",
@@ -96,10 +97,10 @@ export default function DeliveriesPage() {
   }, []);
 
   const activeDeliveries = deliveries.filter(
-    (d) => d.status === "ASSIGNED" || d.status === "PICKED_UP"
+    (d) => d.status === "PENDING_ACCEPTANCE" || d.status === "ASSIGNED" || d.status === "PICKED_UP" || d.status === "IN_TRANSIT"
   );
   const pastDeliveries = deliveries.filter(
-    (d) => d.status === "DELIVERED" || d.status === "CANCELLED"
+    (d) => d.status === "DELIVERED" || d.status === "CANCELLED" || d.status === "CANCELLED_BY_AGENT" || d.status === "FAILED"
   );
 
   const displayedDeliveries = activeTab === "ACTIVE" ? activeDeliveries : pastDeliveries;
@@ -152,8 +153,22 @@ export default function DeliveriesPage() {
     }
   };
 
+  const handleAccept = async (deliveryId: string) => {
+    try {
+      setActionLoading(deliveryId);
+      await deliveryApi.accept(deliveryId);
+      await fetchDeliveries();
+      alert("Delivery accepted! You can now start the pickup.");
+    } catch (err) {
+      console.error("Failed to accept delivery", err);
+      alert("Failed to accept delivery. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const canShowActions = (status: string) => {
-    return !["DELIVERED", "CANCELLED", "CANCELLED_BY_AGENT"].includes(status);
+    return !["DELIVERED", "CANCELLED", "CANCELLED_BY_AGENT", "FAILED", "UNASSIGNED", "CREATED"].includes(status);
   };
 
   return (
@@ -262,7 +277,7 @@ export default function DeliveriesPage() {
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[delivery.status] || "bg-gray-100 text-gray-800"
                               }`}
                           >
-                            {delivery.status.replace("_", " ")}
+                            {delivery.status.replace(/_/g, " ")}
                           </span>
                         </div>
                         <div className="flex items-center text-xs text-gray-500">
@@ -326,17 +341,33 @@ export default function DeliveriesPage() {
                   {/* Actions Footer */}
                   {canShowActions(delivery.status) ? (
                     <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleComplete(delivery.id);
-                          }}
-                          disabled={actionLoading === delivery.id}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                        >
-                          {actionLoading === delivery.id ? "Processing..." : "Complete"}
-                        </button>
+                      <div className="flex gap-2 justify-end flex-wrap">
+                        {/* Accept button - only for PENDING_ACCEPTANCE */}
+                        {delivery.status === "PENDING_ACCEPTANCE" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAccept(delivery.id);
+                            }}
+                            disabled={actionLoading === delivery.id}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                          >
+                            {actionLoading === delivery.id ? "Processing..." : "Accept"}
+                          </button>
+                        )}
+                        {/* Complete button - only for ASSIGNED, PICKED_UP, IN_TRANSIT */}
+                        {(delivery.status === "ASSIGNED" || delivery.status === "PICKED_UP" || delivery.status === "IN_TRANSIT") && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleComplete(delivery.id);
+                            }}
+                            disabled={actionLoading === delivery.id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                          >
+                            {actionLoading === delivery.id ? "Processing..." : "Complete"}
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

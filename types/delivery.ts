@@ -1,6 +1,7 @@
 export type DeliveryStatus =
   | "CREATED"
   | "ASSIGNED"
+  | "PENDING_ACCEPTANCE"
   | "PICKED_UP"
   | "IN_TRANSIT"
   | "DELIVERED"

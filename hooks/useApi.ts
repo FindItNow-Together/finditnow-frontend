@@ -289,6 +289,7 @@ export default function useApi() {
           requestJson("PUT", `/api/deliveries/${deliveryId}/complete`),
         cancel: (deliveryId: string) => requestJson("PUT", `/api/deliveries/${deliveryId}/cancel`),
         optOut: (deliveryId: string) => requestJson("PUT", `/api/deliveries/${deliveryId}/opt-out`),
+        accept: (deliveryId: string) => requestJson("PUT", `/api/deliveries/${deliveryId}/accept`),
       },
     }),
     [get, post, put, del, requestJson]
