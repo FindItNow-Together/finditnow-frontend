@@ -11,11 +11,17 @@ export default function ProductCard({ product, opportunities }: any) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 flex gap-4">
-      <img
-        src={product.imageUrl}
-        alt={product.name}
-        className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover flex-shrink-0"
-      />
+      {product.imageUrl ? (
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-2xl">📦</span>
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
         <p className="text-xl font-semibold text-blue-600 mb-4">₹ ???</p>

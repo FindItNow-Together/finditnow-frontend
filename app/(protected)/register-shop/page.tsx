@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateableSelect from "@/components/CreateableSelect";
+import ImageUploader from "@/components/ImageUploader";
 import { toast } from "sonner";
 
 export default function RegisterShopPage() {
@@ -25,7 +26,11 @@ export default function RegisterShopPage() {
     openHours: "",
     deliveryOption: "NO_DELIVERY" as "NO_DELIVERY" | "IN_HOUSE_DRIVER" | "THIRD_PARTY_PARTNER",
     categoryId: undefined as number | undefined,
+    imageUrl: "",
   });
+
+  // Temporary ID for new shop image uploads
+  const [tempEntityId] = useState(() => crypto.randomUUID());
 
   const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(
     null
@@ -91,6 +96,17 @@ export default function RegisterShopPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Shop Logo/Image</label>
+            <ImageUploader
+              domain="SHOP"
+              entityId={tempEntityId}
+              purpose="image"
+              currentImageUrl={formData.imageUrl}
+              onUploadComplete={(fileKey) => setFormData((prev) => ({ ...prev, imageUrl: fileKey }))}
             />
           </div>
 
