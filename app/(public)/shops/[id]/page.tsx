@@ -71,11 +71,27 @@ export default function ShopPage() {
   return (
     <div className="bg-slate-50 min-h-screen">
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <h1 className="text-2xl font-bold">{shop.name}</h1>
-          <p className="text-slate-600">
-            {shop.description} · {shop.address}
-          </p>
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center gap-6">
+          {/* Shop Logo */}
+          <div className="flex-shrink-0">
+            {shop.imageUrl ? (
+              <img
+                src={shop.imageUrl}
+                alt={shop.name}
+                className="w-16 h-16 rounded-full object-cover border border-gray-200"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center border border-gray-200 text-blue-600 font-bold text-2xl">
+                {shop.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{shop.name}</h1>
+            <p className="text-slate-600">
+              {shop.description} · {shop.address}
+            </p>
+          </div>
         </div>
       </header>
 

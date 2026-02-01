@@ -409,7 +409,21 @@ export default function ShopDetailsPage() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">{shop.name}</h1>
+        <div className="flex items-center gap-4">
+          {/* Shop Logo */}
+          {shop.imageUrl ? (
+            <img
+              src={shop.imageUrl}
+              alt={shop.name}
+              className="w-12 h-12 rounded-full object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center border border-gray-200 text-blue-600 font-bold text-xl">
+              {shop.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <h1 className="text-2xl font-semibold text-gray-800">{shop.name}</h1>
+        </div>
 
         <button
           onClick={handleBack}

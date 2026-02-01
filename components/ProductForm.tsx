@@ -5,6 +5,7 @@ import { Product, ProductRequest } from "@/types/product";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
 import CreateableSelect from "./CreateableSelect";
+import ImageUploader from "@/components/ImageUploader";
 
 interface ProductFormProps {
   shopId: number;
@@ -21,7 +22,11 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
     name: "",
     description: "",
     category: "",
+    imageUrl: "",
   });
+
+  // Temporary ID for new product image uploads before product is created
+  const [tempEntityId] = useState(() => crypto.randomUUID());
 
   // Inventory-specific fields (price and stock)
   const [price, setPrice] = useState<number>(0);
@@ -74,6 +79,7 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
         name: product.name,
         description: product.description || "",
         category: product.category?.name || "",
+        imageUrl: product.imageUrl || "",
       });
       if (product.category) {
         setSelectedCategory({
@@ -260,6 +266,16 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
           <>
             {/* Product Name */}
             <div>
+              <ImageUploader
+                domain="PRODUCT"
+                entityId={product?.id ? String(product.id) : tempEntityId}
+                purpose="image"
+                currentImageUrl={formData.imageUrl}
+                onUploadComplete={(fileKey) =>
+                  setFormData((prev) => ({ ...prev, imageUrl: fileKey }))
+                }
+                className="mb-4"
+              />
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
                 Product Name *
               </label>

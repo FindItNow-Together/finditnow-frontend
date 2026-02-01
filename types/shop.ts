@@ -11,6 +11,7 @@ export type Shop = {
   openHours: string;
   deliveryOption: DeliveryOption;
   category?: CategoryResponse;
+  imageUrl?: string;
 };
 
 export type ShopRequest = {
