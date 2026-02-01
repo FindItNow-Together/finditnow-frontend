@@ -42,9 +42,7 @@ export function SendVerification({ formLevel, setFormLevel }: FormLevelProps) {
         data: { email: formData.get("email") as string },
       });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
+      toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }
   };
 
@@ -97,9 +95,7 @@ export function VerifyPasswordToken({ formLevel, setFormLevel }: FormLevelProps)
       toast.success("Token verified. You can now reset your password.");
       setFormLevel({ name: "set", data: formLevel.data });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Verification failed. Please try again."
-      );
+      toast.error(err instanceof Error ? err.message : "Verification failed. Please try again.");
     }
   };
 
@@ -160,9 +156,7 @@ export function ResetPassword({ formLevel, setFormLevel }: FormLevelProps) {
       toast.success("Password reset successfully. Redirecting to login...");
       setTimeout(() => router.push("/login"), 800);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Reset failed. Please try again."
-      );
+      toast.error(err instanceof Error ? err.message : "Reset failed. Please try again.");
     }
   };
 

@@ -11,7 +11,7 @@ import { useEffect } from "react";
 const accessRoleTabMapping: Record<string, string[]> = {
   CUSTOMER: ["Discover", "Orders"],
   SHOP: ["Discover", "Orders", "Dashboard"],
-  DELIVERY_AGENT: ["Discover", "Orders", "Deliveries", "Dashboard"],
+  DELIVERY_AGENT: ["Discover", "Orders", "Deliveries"],
   UNASSIGNED: ["Discover", "Orders"],
   ADMIN: ["Dashboard"],
 };
@@ -68,8 +68,8 @@ export default function Navbar() {
           {/* LEFT */}
           <div className="flex items-center gap-8">
             <Link href="/" className="text-2xl font-extrabold tracking-tight select-none">
-              <span className="text-blue-600">Find It</span>
-              <span className="text-green-600"> Now</span>
+              <span className="text-blue-600">Findit</span>
+              <span className="text-green-600">Now</span>
             </Link>
 
             {/* Global Search */}

@@ -140,8 +140,8 @@ export default function Profile() {
             )}
             {activeTab === "cards" && <CardsSection />}
             {activeTab === "addresses" && <AddressesSection />}
-            {role === "shopOwner" && activeTab === "shops" && <ShopsSection />}
-            {role === "deliveryAgent" && activeTab === "past-deliveries" && (
+            {role === "SHOP" && activeTab === "shops" && <ShopsSection />}
+            {role === "DELIVERY_AGENT" && activeTab === "past-deliveries" && (
               <PastDeliveriesSection />
             )}
           </main>

@@ -42,7 +42,9 @@ export default function DeleteShopsPage() {
       // Call the API to get all shops owned by the current user
       const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
       // Handle paginated response
-      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
 
       // Update the shops state with the fetched data
       setShops(shopsList);

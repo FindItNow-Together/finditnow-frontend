@@ -32,6 +32,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   const api = useApi();
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
+  const [delivery, setDelivery] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -56,13 +57,30 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     }
   };
 
+  const fetchDelivery = async () => {
+    try {
+      const response = await api.get(`/api/deliveries/order/${orderId}`, { auth: "private" });
+      if (response.ok) {
+        const data = await response.json();
+        setDelivery(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch delivery", e);
+    }
+  };
+
   useEffect(() => {
     if (orderId) {
       fetchOrder();
+      fetchDelivery();
     }
   }, [orderId]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) {
+      return "N/A";
+    }
+
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "long",
@@ -143,12 +161,47 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     },
     {
       status: "Order Placed",
-      date: "Yesterday, 1:56 PM",
+      date: formatDate(order?.createdAt),
       completed: true,
       icon: Package,
       description: "Order has been confirmed",
     },
   ];
+
+  if (delivery) {
+    const statusMap: Record<string, number> = {
+      PENDING: 0,
+      ASSIGNED: 1,
+      PICKED_UP: 2,
+      DELIVERED: 3,
+    };
+    const currentLevel = statusMap[delivery.status] ?? 0;
+
+    const steps = [
+      { key: "PENDING", label: "Looking for Agent", desc: "We are assigning a delivery partner" },
+      { key: "ASSIGNED", label: "Agent Assigned", desc: "Partner is on the way to shop" },
+      { key: "PICKED_UP", label: "Out for Delivery", desc: "Agent has picked up your order" },
+      { key: "DELIVERED", label: "Delivered", desc: "Package delivered" },
+    ];
+
+    steps.forEach((step, idx) => {
+      // Only show steps relevant to the flow (simplified)
+      // Or show all and mark completed
+      const isCompleted = idx <= currentLevel;
+      const isCurrent = idx === currentLevel;
+
+      deliveryUpdates.push({
+        status: step.label,
+        date: isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending",
+        completed: isCompleted,
+        icon: isCompleted ? CheckCircle : Truck,
+        description: step.desc,
+      });
+    });
+  } else {
+    // Fallback or "Self Pickup" logic could go here
+    // For now, if no delivery record found (maybe just created), show generic
+  }
 
   if (loading) {
     return (
@@ -355,7 +408,8 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Order</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Please provide a reason for cancellation (at least 5 characters). This cannot be undone.
+              Please provide a reason for cancellation (at least 5 characters). This cannot be
+              undone.
             </p>
             <textarea
               value={cancelReason}

@@ -5,7 +5,7 @@ export const STATIC_OPPORTUNITIES: Opportunity[] = [
     product: {
       id: "p1",
       name: "Milk 1L",
-      image: "/placeholder-product.png",
+      imageUrl: "/placeholder-product.png",
       minPrice: 52,
       shopCount: 3,
       deliveryCount: 2,
@@ -19,12 +19,18 @@ export const STATIC_OPPORTUNITIES: Opportunity[] = [
     },
     price: 52,
     distanceKm: 0.8,
+    inventory: {
+      inventoryId: 10,
+      stock: 10,
+      price: 100,
+      reservedStock: 0,
+    },
   },
   {
     product: {
       id: "p2",
       name: "Brown Bread",
-      image: "/placeholder-product.png",
+      imageUrl: "/placeholder-product.png",
       minPrice: 38,
       shopCount: 2,
       deliveryCount: 1,
@@ -38,5 +44,11 @@ export const STATIC_OPPORTUNITIES: Opportunity[] = [
     },
     price: 38,
     distanceKm: 1.2,
+    inventory: {
+      inventoryId: 4,
+      stock: 5,
+      price: 20,
+      reservedStock: 2,
+    },
   },
 ];

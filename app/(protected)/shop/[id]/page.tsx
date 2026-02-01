@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
 import { InventoryItem } from "@/types/inventory";
+import { OrderResponse } from "@/types/order";
 import ProductForm from "@/components/ProductForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -28,7 +29,7 @@ export default function ShopDetailsPage() {
   const params = useParams();
   const shopId = params?.id ? Number(params.id) : null;
 
-  const { inventoryApi, shopApi, productApi } = useApi();
+  const { inventoryApi, shopApi, productApi, get } = useApi();
   const { addToCart, itemCount } = useCart();
 
   const [shop, setShop] = useState<Shop | null>(null);
@@ -46,12 +47,106 @@ export default function ShopDetailsPage() {
   const [deleting, setDeleting] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
 
+  // Dashboard Stats State
+  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [earnings, setEarnings] = useState<number>(0);
+  const [recentProducts, setRecentProducts] = useState<string[]>([]);
+  const [orderPage, setOrderPage] = useState(0);
+  const [hasMoreOrders, setHasMoreOrders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     if (isAuthenticated && shopId) {
       loadShopDetails();
       loadInventory();
+      loadDashboardData();
+
+      // Polling for real-time updates (every 30 seconds)
+      const intervalId = setInterval(() => {
+        refreshDashboardData();
+      }, 30000);
+
+      return () => clearInterval(intervalId);
     }
   }, [isAuthenticated, shopId]);
+
+  const loadDashboardData = async () => {
+    loadOrders(0, true);
+    loadEarnings();
+    loadRecentProducts();
+  };
+
+  const refreshDashboardData = async () => {
+    setRefreshing(true);
+    // Refresh earnings and recent products
+    // For orders, we only refresh the first page to check for new ones
+    try {
+      await Promise.all([
+        loadOrders(0, true), // Reset orders list with fresh data
+        loadEarnings(),
+        loadRecentProducts(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const loadOrders = async (page: number, reset: boolean = false) => {
+    if (!shopId) return;
+    try {
+      if (!reset) setLoadingOrders(true);
+      const res = await get(`/api/orders/shop/${shopId}?page=${page}&size=10`, { auth: "private" });
+      if (res.ok) {
+        const data = await res.json();
+        const newOrders = data.content;
+
+        if (reset) {
+          setOrders(newOrders);
+          setOrderPage(0);
+        } else {
+          setOrders((prev) => [...prev, ...newOrders]);
+          setOrderPage(page);
+        }
+
+        setHasMoreOrders(!data.last);
+      }
+    } catch (err) {
+      console.error("Failed to load orders", err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const loadEarnings = async () => {
+    if (!shopId) return;
+    try {
+      const res = await get(`/api/orders/shop/${shopId}/earnings`, { auth: "private" });
+      if (res.ok) {
+        const amount = await res.json();
+        setEarnings(amount || 0);
+      }
+    } catch (err) {
+      console.error("Failed to load earnings", err);
+    }
+  };
+
+  const loadRecentProducts = async () => {
+    if (!shopId) return;
+    try {
+      const res = await get(`/api/orders/shop/${shopId}/recent-products`, { auth: "private" });
+      if (res.ok) {
+        const products = await res.json();
+        setRecentProducts(products);
+      }
+    } catch (err) {
+      console.error("Failed to load recent products", err);
+    }
+  };
+
+  const handleLoadMoreOrders = () => {
+    loadOrders(orderPage + 1);
+  };
 
   const loadShopDetails = async () => {
     if (!shopId) return;
@@ -381,6 +476,140 @@ export default function ShopDetailsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Earnings Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-500">Total Earnings</h3>
+            {refreshing && <span className="text-xs text-blue-500 animate-pulse">Updating...</span>}
+          </div>
+          <p className="text-3xl font-bold text-gray-900">
+            {new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              maximumFractionDigits: 0,
+            }).format(earnings)}
+          </p>
+          <p className="mt-2 text-xs text-gray-500">Lifetime earnings from all completed orders</p>
+        </div>
+
+        {/* Recent Products Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-medium text-gray-500">Recently Ordered Products</h3>
+          {recentProducts.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recentProducts.map((name, i) => (
+                <span
+                  key={i}
+                  className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No recent orders yet</p>
+          )}
+        </div>
+      </div>
+
+      {/* Order History */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Order History ({orders.length}+)</h2>
+          <button
+            onClick={() => refreshDashboardData()}
+            className="text-sm text-blue-600 hover:text-blue-800"
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing..." : "Refresh Now"}
+          </button>
+        </div>
+
+        {orders.length === 0 ? (
+          <p className="text-sm text-gray-600">No orders found.</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Order ID</th>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium">Customer</th>
+                    <th className="px-4 py-3 font-medium">Total</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Payment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {/* We don't have customer name in OrderResponse yet, using ID or placeholder */}
+                        User
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {new Intl.NumberFormat("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 0,
+                        }).format(order.totalAmount)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                           ${
+                             order.status === "created"
+                               ? "bg-gray-100 text-gray-800"
+                               : order.status === "delivered"
+                                 ? "bg-green-100 text-green-800"
+                                 : order.status === "cancelled"
+                                   ? "bg-red-100 text-red-800"
+                                   : "bg-blue-100 text-blue-800"
+                           }
+                         `}
+                        >
+                          {order.status.replace(/_/g, " ").toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {order.paymentStatus === "paid" ? (
+                          <span className="text-green-600 font-medium">Paid</span>
+                        ) : (
+                          <span className="text-yellow-600">Pending</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {hasMoreOrders && (
+              <div className="text-center pt-2">
+                <button
+                  onClick={handleLoadMoreOrders}
+                  disabled={loadingOrders}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                >
+                  {loadingOrders ? "Loading..." : "Load More Orders"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Products */}

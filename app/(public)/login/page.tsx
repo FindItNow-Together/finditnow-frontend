@@ -24,8 +24,8 @@ function Login() {
 
       let data;
       try {
-           data = await res.json();
-       } catch {
+        data = await res.json();
+      } catch {
         toast.error("Invalid response from server. Please try again later.");
         return;
       }

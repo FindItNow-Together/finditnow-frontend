@@ -9,7 +9,6 @@ import { User, UserRole } from "@/types/user";
 import { cookies } from "next/headers";
 import ToasterProvider from "@/app/_components/ToasterProvider";
 
-
 import { URL } from "node:url";
 import Script from "next/script";
 
@@ -101,7 +100,7 @@ export default async function RootLayout({
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
 
         <ToasterProvider />
-        
+
         <AuthProvider auth={auth}>
           <CartProvider>
             <Navbar />

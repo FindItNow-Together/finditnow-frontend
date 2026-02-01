@@ -35,9 +35,7 @@ function SignUp() {
           return;
         }
 
-        toast.error(
-          (data.error as string).split("_").join(" ") || "Signup failed"
-        );
+        toast.error((data.error as string).split("_").join(" ") || "Signup failed");
         return;
       }
 
@@ -51,9 +49,7 @@ function SignUp() {
       toast.success("Account created. Verify your email.");
       router.push(`/verify_otp/${data.credId}`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
+      toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -129,9 +125,7 @@ function SignUp() {
                 <label
                   key={role}
                   className={`flex-1 text-center py-2 text-[10px] font-bold uppercase cursor-pointer rounded-md transition-all ${
-                    selectedRole === value
-                      ? "bg-white shadow-sm text-black"
-                      : "text-gray-500"
+                    selectedRole === value ? "bg-white shadow-sm text-black" : "text-gray-500"
                   }`}
                 >
                   <input

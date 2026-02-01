@@ -23,7 +23,7 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
     setIsUpdating(true);
 
     try {
-      await onUpdateQuantity(item.id, newQuantity);
+      await onUpdateQuantity(item.itemId, newQuantity);
     } catch (error) {
       setOptimisticQuantity(previousQuantity);
       console.error("Failed to update quantity:", error);
@@ -37,7 +37,7 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
 
     setIsRemoving(true);
     try {
-      await onRemove(item.id);
+      await onRemove(item.itemId);
     } catch (error) {
       console.error("Failed to remove item:", error);
       setIsRemoving(false);
@@ -51,9 +51,9 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
       <div className="flex gap-4">
         {/* Product Image */}
         <div className="flex-shrink-0">
-          {item.productImage ? (
+          {item.imageUrl ? (
             <img
-              src={item.productImage}
+              src={item.imageUrl}
               alt={item.productName}
               className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover"
             />
@@ -69,9 +69,7 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">{item.productName}</h3>
-              {item.shopName && (
-                <p className="text-sm text-gray-600 mb-2">Shop: {item.shopName}</p>
-              )}
+              {/*{item.shopName && <p className="text-sm text-gray-600 mb-2">Shop: {item.shopName}</p>}*/}
               <p className="text-lg font-semibold text-blue-600">₹{item.price.toFixed(2)}</p>
             </div>
 
@@ -124,4 +122,3 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
     </div>
   );
 }
-
