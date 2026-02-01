@@ -24,7 +24,7 @@ type OrderStatus =
   | "out_for_delivery"
   | "delivered"
   | "cancelled";
-type PaymentStatus = "pending" | "paid" | "partially_paid" | "failed";
+type PaymentStatus = "pending" | "paid" | "partially_paid" | "failed" | "refund_pending";
 type DateGroup = "Today" | "Yesterday" | "Last 7 Days" | "Last 30 Days" | "Older";
 
 interface StatusConfig {
@@ -126,6 +126,7 @@ const OrdersPage = () => {
       paid: { color: "bg-green-100 text-green-800", label: "Paid" },
       partially_paid: { color: "bg-orange-100 text-orange-800", label: "Partially Paid" },
       failed: { color: "bg-red-100 text-red-800", label: "Failed" },
+      refund_pending: { color: "bg-amber-100 text-amber-800", label: "Refund Pending" },
     };
     return configs[status as PaymentStatus] || configs.pending;
   };

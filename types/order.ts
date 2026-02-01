@@ -17,4 +17,10 @@ export interface OrderResponse {
   deliveryAddressId: string;
   createdAt: string;
   items: OrderItemResponse[];
+  /** Set when order is cancelled: "customer" | "delivery_agent" */
+  cancelledBy?: string;
+  /** Set when order is cancelled */
+  cancellationReason?: string;
+  /** Set when order is cancelled (ISO date string) */
+  cancelledAt?: string;
 }

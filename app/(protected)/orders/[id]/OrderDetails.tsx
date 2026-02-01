@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
+import { toast } from "sonner";
 import {
   ArrowLeft,
+  Box,
   Calendar,
   CheckCircle,
   Clock,
@@ -11,8 +13,15 @@ import {
   MapPin,
   Package,
   Truck,
+  XCircle,
 } from "lucide-react";
 import { OrderResponse } from "@/types/order";
+
+const CANCELLABLE_STATUSES = ["created", "confirmed", "paid"];
+
+function isCancellable(order: OrderResponse): boolean {
+  return CANCELLABLE_STATUSES.includes(order.status.toLowerCase());
+}
 
 interface PageProps {
   id: string;
@@ -26,45 +35,52 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   const [delivery, setDelivery] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/api/orders/${orderId}`, { auth: "private" });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch order details");
+      }
+
+      const data = await response.json();
+      setOrder(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDelivery = async () => {
+    try {
+      const response = await api.get(`/api/deliveries/order/${orderId}`, { auth: "private" });
+      if (response.ok) {
+        const data = await response.json();
+        setDelivery(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch delivery", e);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/api/orders/${orderId}`, { auth: "private" });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch order details");
-        }
-
-        const data = await response.json();
-        setOrder(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchDelivery = async () => {
-      try {
-        const response = await api.get(`/api/deliveries/order/${orderId}`, { auth: "private" });
-        if (response.ok) {
-          const data = await response.json();
-          setDelivery(data);
-        }
-      } catch (e) {
-        console.error("Failed to fetch delivery", e);
-      }
-    };
-
     if (orderId) {
       fetchOrder();
       fetchDelivery();
     }
-  }, [api, orderId]);
+  }, [orderId]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) {
+      return "N/A";
+    }
+
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "long",
@@ -82,18 +98,75 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     }).format(amount);
   };
 
-  // Dynamic delivery updates
-  const deliveryUpdates = [];
+  const handleCancelOrder = async () => {
+    const trimmed = cancelReason.trim();
+    if (trimmed.length < 5) return;
+    setCancelSubmitting(true);
+    try {
+      const response = await api.put(
+        `/api/orders/${orderId}/cancel`,
+        { reason: trimmed },
+        { auth: "private" }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = data?.error || `Request failed (${response.status})`;
+        toast.error(msg);
+        return;
+      }
+      toast.success("Order cancelled successfully");
+      setCancelModalOpen(false);
+      setCancelReason("");
+      setOrder(data as OrderResponse);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel order");
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
 
-  if (order) {
-    deliveryUpdates.push({
+  const showCancelButton = order && isCancellable(order);
+  const isCancelled = order?.status?.toLowerCase() === "cancelled";
+  const cancelReasonValid = cancelReason.trim().length >= 5;
+
+  // Dummy delivery updates data
+  const deliveryUpdates = [
+    {
+      status: "Delivered",
+      date: "Expected by tomorrow",
+      completed: false,
+      icon: CheckCircle,
+      description: "Package will be delivered to your address",
+    },
+    {
+      status: "Out for Delivery",
+      date: "Today, 9:00 AM",
+      completed: false,
+      icon: Truck,
+      description: "Agent is on the way to your location",
+    },
+    {
+      status: "Shipped",
+      date: "Yesterday, 4:30 PM",
+      completed: true,
+      icon: Truck,
+      description: "Package has left the facility",
+    },
+    {
+      status: "Packed",
+      date: "Yesterday, 2:00 PM",
+      completed: true,
+      icon: Box,
+      description: "Seller has packed your order",
+    },
+    {
       status: "Order Placed",
-      date: formatDate(order.createdAt),
+      date: formatDate(order?.createdAt),
       completed: true,
       icon: Package,
       description: "Order has been confirmed",
-    });
-  }
+    },
+  ];
 
   if (delivery) {
     const statusMap: Record<string, number> = {
@@ -277,11 +350,35 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
                   <Clock className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Status</p>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize mt-1">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize mt-1 ${
+                        isCancelled ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
                       {order.status.replace(/_/g, " ")}
                     </span>
                   </div>
                 </div>
+                {isCancelled && order.cancellationReason && (
+                  <div className="flex items-start mt-3 pt-3 border-t border-gray-100">
+                    <XCircle className="w-5 h-5 text-red-400 mr-3 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Cancellation reason</p>
+                      <p className="text-sm text-gray-600 mt-0.5">{order.cancellationReason}</p>
+                    </div>
+                  </div>
+                )}
+                {showCancelButton && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setCancelModalOpen(true)}
+                      className="w-full px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      Cancel Order
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -304,6 +401,53 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
           </div>
         </div>
       </div>
+
+      {/* Cancel Order Modal */}
+      {cancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Order</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for cancellation (at least 5 characters). This cannot be
+              undone.
+            </p>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g. Changed my mind / Wrong address / Found better price"
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 placeholder-gray-400 resize-none"
+              disabled={cancelSubmitting}
+            />
+            {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+              <p className="text-xs text-amber-600 mt-1">Reason must be at least 5 characters</p>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!cancelSubmitting) {
+                    setCancelModalOpen(false);
+                    setCancelReason("");
+                  }
+                }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                disabled={cancelSubmitting}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelOrder}
+                disabled={!cancelReasonValid || cancelSubmitting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelSubmitting ? "Cancelling…" : "Confirm Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
