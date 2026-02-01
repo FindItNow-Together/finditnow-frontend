@@ -213,11 +213,15 @@ export default function OrdersSection({ orders, onOrdersLoad }: OrdersSectionPro
                           >
                             {formatStatus(order.status)}
                           </span>
-                          {order.status?.toLowerCase() === "cancelled" && order.cancellationReason && (
-                            <span className="text-xs text-gray-500 max-w-[200px] truncate" title={order.cancellationReason}>
-                              {order.cancellationReason}
-                            </span>
-                          )}
+                          {order.status?.toLowerCase() === "cancelled" &&
+                            order.cancellationReason && (
+                              <span
+                                className="text-xs text-gray-500 max-w-[200px] truncate"
+                                title={order.cancellationReason}
+                              >
+                                {order.cancellationReason}
+                              </span>
+                            )}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right">
