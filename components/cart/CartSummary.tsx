@@ -46,4 +46,3 @@ export default function CartSummary({ cart, onCheckout, isLoading = false }: Car
     </div>
   );
 }
-

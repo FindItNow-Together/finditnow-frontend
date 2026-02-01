@@ -9,99 +9,103 @@ import ProductList from "@/app/(public)/discover/_components/ProductList";
 import { Opportunity } from "@/app/(public)/discover/types";
 
 export default function ShopPage() {
-    const { id } = useParams();
-    const api = useApi();
+  const { id } = useParams();
+  const api = useApi();
 
-    const [shop, setShop] = useState<any>(null);
-    const [query, setQuery] = useState("");
-    const [category, setCategory] = useState("all");
-    const { query: debQuery, setDebounceQuery } = useDebounce(query);
+  const [shop, setShop] = useState<any>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const { query: debQuery, setDebounceQuery } = useDebounce(query);
 
-    const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    // Fetch Shop Details
-    useEffect(() => {
-        if (!id) return;
-        api.shopApi.getShop(Number(id)).then(setShop).catch(console.error);
-    }, [id, api]);
+  // Fetch Shop Details
+  useEffect(() => {
+    if (!id) return;
+    api.shopApi.getShop(Number(id)).then(setShop).catch(console.error);
+  }, [id, api]);
 
-    // Search in Shop
-    const fetchOpportunities = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
-            if (debQuery) params.set("q", String(debQuery));
-            if (category !== "all") params.set("category", category);
+  // Search in Shop
+  const fetchOpportunities = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (debQuery) params.set("q", String(debQuery));
+      if (category !== "all") params.set("category", category);
 
-            // Pass shopId to restrict search
-            params.set("shopId", String(id));
+      // Pass shopId to restrict search
+      params.set("shopId", String(id));
 
-            // Note: We might want location here too if distance is relevant within a shop (probably not as much, but API expects it for sorting?)
-            // For now, let's omit location or use a default if needed. 
-            // Actually the backend calculates distance only if userLoc is provided. 
-            // But for "in-shop" search, maybe we just want to know availability.
+      // Note: We might want location here too if distance is relevant within a shop (probably not as much, but API expects it for sorting?)
+      // For now, let's omit location or use a default if needed.
+      // Actually the backend calculates distance only if userLoc is provided.
+      // But for "in-shop" search, maybe we just want to know availability.
 
-            const res = await api.get(`/api/search/products?${params.toString()}`);
-            if (!res.ok) throw new Error();
+      const res = await api.get(`/api/search/products?${params.toString()}`);
+      if (!res.ok) throw new Error();
 
-            const body = await res.json();
-            const opportunities = body?.data?.content || [];
-            setOpportunities(opportunities);
-        } catch (e) {
-            console.error(e);
-            setOpportunities([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [debQuery, category, id, api]);
+      const body = await res.json();
+      const opportunities = body?.data?.content || [];
+      setOpportunities(opportunities);
+    } catch (e) {
+      console.error(e);
+      setOpportunities([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debQuery, category, id, api]);
 
-    useEffect(() => {
-        fetchOpportunities();
-    }, [fetchOpportunities]);
+  useEffect(() => {
+    fetchOpportunities();
+  }, [fetchOpportunities]);
 
-    /* derive products */
-    const products = Array.from(
-        new Map(opportunities.map((o) => [o.product.id, o.product])).values()
-    );
+  /* derive products */
+  const products = Array.from(
+    new Map(opportunities.map((o) => [o.product.id, o.product])).values()
+  );
 
-    if (!shop) return <div className="p-8 text-center">Loading shop...</div>;
+  if (!shop) return <div className="p-8 text-center">Loading shop...</div>;
 
-    return (
-        <div className="bg-slate-50 min-h-screen">
-            <header className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-6 py-6">
-                    <h1 className="text-2xl font-bold">{shop.name}</h1>
-                    <p className="text-slate-600">{shop.description} · {shop.address}</p>
-                </div>
-            </header>
-
-            <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-                <ProductSearchBar
-                    value={query}
-                    onChange={(v) => {
-                        setQuery(v);
-                        setDebounceQuery(v);
-                    }}
-                    category={category}
-                    onCategoryChange={setCategory}
-                />
-
-                {loading ? (
-                    <div className="text-center py-10 text-slate-500">Searching...</div>
-                ) : (
-                    <>
-                        {products.length === 0 ? (
-                            <div className="text-center py-10 text-slate-500">
-                                {debQuery ? "No products found matching your search." : "Search for products in this shop."}
-                            </div>
-                        ) : (
-                            <ProductList products={products} opportunities={opportunities} />
-                        )}
-                    </>
-                )}
-            </div>
+  return (
+    <div className="bg-slate-50 min-h-screen">
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <h1 className="text-2xl font-bold">{shop.name}</h1>
+          <p className="text-slate-600">
+            {shop.description} · {shop.address}
+          </p>
         </div>
-    );
+      </header>
+
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+        <ProductSearchBar
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setDebounceQuery(v);
+          }}
+          category={category}
+          onCategoryChange={setCategory}
+        />
+
+        {loading ? (
+          <div className="text-center py-10 text-slate-500">Searching...</div>
+        ) : (
+          <>
+            {products.length === 0 ? (
+              <div className="text-center py-10 text-slate-500">
+                {debQuery
+                  ? "No products found matching your search."
+                  : "Search for products in this shop."}
+              </div>
+            ) : (
+              <ProductList products={products} opportunities={opportunities} />
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
 }

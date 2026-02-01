@@ -20,7 +20,9 @@ export function ShopsSection() {
   const loadShops = async () => {
     try {
       const response = (await shopApi.getMyShops()) as PagedResponse<Shop> | Shop[];
-      const shopsList = Array.isArray(response) ? response : (response as PagedResponse<Shop>).content || [];
+      const shopsList = Array.isArray(response)
+        ? response
+        : (response as PagedResponse<Shop>).content || [];
       setShops(shopsList);
       setError(null);
     } catch (err: any) {
@@ -47,7 +49,9 @@ export function ShopsSection() {
       <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Shops</h2>
-          <p className="text-sm text-gray-500 mt-1">{shops.length} shop{shops.length !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {shops.length} shop{shops.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <button
           onClick={() => router.push("/register-shop")}

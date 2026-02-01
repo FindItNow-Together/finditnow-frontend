@@ -27,7 +27,9 @@ export default function RegisterShopPage() {
     categoryId: undefined as number | undefined,
   });
 
-  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string; value: string } | null>(
+    null
+  );
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(

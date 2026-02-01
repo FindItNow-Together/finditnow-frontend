@@ -55,7 +55,9 @@ export default function PastDeliveriesSection() {
           {[1, 2, 3].map((d) => (
             <div key={d} className="p-4 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-900 dark:text-gray-100">DELV-{1000 + d}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  DELV-{1000 + d}
+                </span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹250</span>
               </div>
               <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">

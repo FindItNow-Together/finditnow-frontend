@@ -42,16 +42,12 @@ export default function AdminDeleteShopsPage() {
 
   const handleToggleShopSelection = (shopId: number) => {
     const newSelectedIds = new Set(selectedShopIds);
-    newSelectedIds.has(shopId)
-      ? newSelectedIds.delete(shopId)
-      : newSelectedIds.add(shopId);
+    newSelectedIds.has(shopId) ? newSelectedIds.delete(shopId) : newSelectedIds.add(shopId);
     setSelectedShopIds(newSelectedIds);
   };
 
   const handleDeleteSelected = () => {
-    const selectedShops = shops.filter((shop) =>
-      selectedShopIds.has(shop.id)
-    );
+    const selectedShops = shops.filter((shop) => selectedShopIds.has(shop.id));
     setShopsToDelete(selectedShops);
     setShowConfirmation(true);
   };
@@ -124,13 +120,16 @@ export default function AdminDeleteShopsPage() {
           </h2>
 
           <p style={{ marginBottom: "20px", color: "#666" }}>
-            The following {shopsToDelete.length} shop(s) will be permanently deleted.
-            This action cannot be undone.
+            The following {shopsToDelete.length} shop(s) will be permanently deleted. This action
+            cannot be undone.
           </p>
 
           <ul style={{ listStyle: "none", padding: 0, marginBottom: "24px" }}>
             {shopsToDelete.map((shop) => (
-              <li key={shop.id} style={{ padding: "12px", marginBottom: "8px", background: "#fff3cd" }}>
+              <li
+                key={shop.id}
+                style={{ padding: "12px", marginBottom: "8px", background: "#fff3cd" }}
+              >
                 <strong>{shop.name}</strong>
                 <br />
                 <span style={{ fontSize: "14px", color: "#666" }}>

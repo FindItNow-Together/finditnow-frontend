@@ -143,9 +143,7 @@ export default function CartPage() {
 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between">
                   <span className="text-sm text-gray-600">Item subtotal:</span>
-                  <span className="font-semibold">
-                    ₹{(item.price * item.quantity).toFixed(2)}
-                  </span>
+                  <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               </div>
             ))}

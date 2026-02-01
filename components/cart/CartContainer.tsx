@@ -30,8 +30,8 @@ export default function CartContainer({ shopId }: CartContainerProps) {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.cartApi.getCart(userData.id, shopId);
-      const cartData = (response as CartResponse).data || (response as Cart);
+      const response = await api.cartApi.getCart();
+      const cartData = response as Cart;
       setCart(cartData);
     } catch (err) {
       console.error("Failed to fetch cart:", err);
@@ -121,7 +121,7 @@ export default function CartContainer({ shopId }: CartContainerProps) {
         <div className="lg:col-span-2 space-y-4">
           {cart.items.map((item) => (
             <CartItemCard
-              key={item.id}
+              key={item.itemId}
               item={item}
               onUpdateQuantity={handleUpdateQuantity}
               onRemove={handleRemoveItem}
@@ -137,4 +137,3 @@ export default function CartContainer({ shopId }: CartContainerProps) {
     </div>
   );
 }
-

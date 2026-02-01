@@ -96,7 +96,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   }
 
   if (delivery) {
-    const statusMap = {
+    const statusMap: Record<string, number> = {
       PENDING: 0,
       ASSIGNED: 1,
       PICKED_UP: 2,

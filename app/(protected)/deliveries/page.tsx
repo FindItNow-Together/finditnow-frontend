@@ -97,10 +97,18 @@ export default function DeliveriesPage() {
   }, []);
 
   const activeDeliveries = deliveries.filter(
-    (d) => d.status === "PENDING_ACCEPTANCE" || d.status === "ASSIGNED" || d.status === "PICKED_UP" || d.status === "IN_TRANSIT"
+    (d) =>
+      d.status === "PENDING_ACCEPTANCE" ||
+      d.status === "ASSIGNED" ||
+      d.status === "PICKED_UP" ||
+      d.status === "IN_TRANSIT"
   );
   const pastDeliveries = deliveries.filter(
-    (d) => d.status === "DELIVERED" || d.status === "CANCELLED" || d.status === "CANCELLED_BY_AGENT" || d.status === "FAILED"
+    (d) =>
+      d.status === "DELIVERED" ||
+      d.status === "CANCELLED" ||
+      d.status === "CANCELLED_BY_AGENT" ||
+      d.status === "FAILED"
   );
 
   const displayedDeliveries = activeTab === "ACTIVE" ? activeDeliveries : pastDeliveries;
@@ -168,7 +176,14 @@ export default function DeliveriesPage() {
   };
 
   const canShowActions = (status: string) => {
-    return !["DELIVERED", "CANCELLED", "CANCELLED_BY_AGENT", "FAILED", "UNASSIGNED", "CREATED"].includes(status);
+    return ![
+      "DELIVERED",
+      "CANCELLED",
+      "CANCELLED_BY_AGENT",
+      "FAILED",
+      "UNASSIGNED",
+      "CREATED",
+    ].includes(status);
   };
 
   return (
@@ -195,12 +210,13 @@ export default function DeliveriesPage() {
                       disabled={!canSelect}
                       onClick={() => updateAgentStatus(status)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition
-                ${isCurrent
-                          ? "bg-blue-600 text-white"
-                          : canSelect
-                            ? "bg-gray-100 hover:bg-blue-50 text-gray-800"
-                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                        }`}
+                ${
+                  isCurrent
+                    ? "bg-blue-600 text-white"
+                    : canSelect
+                      ? "bg-gray-100 hover:bg-blue-50 text-gray-800"
+                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                }`}
                     >
                       {status}
                     </button>
@@ -221,10 +237,11 @@ export default function DeliveriesPage() {
         <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 mb-6 w-fit">
           <button
             onClick={() => setActiveTab("ACTIVE")}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "ACTIVE"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:bg-gray-50"
-              }`}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "ACTIVE"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
           >
             Active
             <span className="ml-2 bg-white/20 px-1.5 py-0.5 rounded-full text-xs">
@@ -233,10 +250,11 @@ export default function DeliveriesPage() {
           </button>
           <button
             onClick={() => setActiveTab("PAST")}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "PAST"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600 hover:bg-gray-50"
-              }`}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "PAST"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
           >
             Past
           </button>
@@ -274,8 +292,9 @@ export default function DeliveriesPage() {
                             #{delivery.orderId.substring(0, 8)}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[delivery.status] || "bg-gray-100 text-gray-800"
-                              }`}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              statusColors[delivery.status] || "bg-gray-100 text-gray-800"
+                            }`}
                           >
                             {delivery.status.replace(/_/g, " ")}
                           </span>
@@ -356,7 +375,9 @@ export default function DeliveriesPage() {
                           </button>
                         )}
                         {/* Complete button - only for ASSIGNED, PICKED_UP, IN_TRANSIT */}
-                        {(delivery.status === "ASSIGNED" || delivery.status === "PICKED_UP" || delivery.status === "IN_TRANSIT") && (
+                        {(delivery.status === "ASSIGNED" ||
+                          delivery.status === "PICKED_UP" ||
+                          delivery.status === "IN_TRANSIT") && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -392,7 +413,9 @@ export default function DeliveriesPage() {
                     </div>
                   ) : (
                     <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-500">Status: {delivery.status.replace(/_/g, " ")}</span>
+                      <span className="text-sm text-gray-500">
+                        Status: {delivery.status.replace(/_/g, " ")}
+                      </span>
                     </div>
                   )}
                 </div>
