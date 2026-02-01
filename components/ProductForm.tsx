@@ -232,8 +232,9 @@ export default function ProductForm({ shopId, product, onSave, onCancel }: Produ
                       setSearchQuery(prod.name);
                       setSearchResults([]);
                     }}
-                    className={`p-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 ${selectedProduct?.id === prod.id ? "bg-blue-100" : ""
-                      }`}
+                    className={`p-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 ${
+                      selectedProduct?.id === prod.id ? "bg-blue-100" : ""
+                    }`}
                   >
                     <p className="font-medium text-gray-800">{prod.name}</p>
                     <p className="text-sm text-gray-600">

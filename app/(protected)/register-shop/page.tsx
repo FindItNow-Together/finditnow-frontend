@@ -106,7 +106,9 @@ export default function RegisterShopPage() {
               entityId={tempEntityId}
               purpose="image"
               currentImageUrl={formData.imageUrl}
-              onUploadComplete={(fileKey) => setFormData((prev) => ({ ...prev, imageUrl: fileKey }))}
+              onUploadComplete={(fileKey) =>
+                setFormData((prev) => ({ ...prev, imageUrl: fileKey }))
+              }
             />
           </div>
 
