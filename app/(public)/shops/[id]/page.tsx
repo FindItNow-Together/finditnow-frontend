@@ -76,7 +76,7 @@ export default function ShopPage() {
           <div className="flex-shrink-0">
             {shop.imageUrl ? (
               <img
-                src={shop.imageUrl}
+                src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
                 alt={shop.name}
                 className="w-16 h-16 rounded-full object-cover border border-gray-200"
               />

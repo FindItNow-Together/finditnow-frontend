@@ -1,10 +1,12 @@
+//positioning of keys matter as first matching startsWith key will be used in auth context
 export const ROLE_ROUTE_MAP: Record<string, string[]> = {
   "/admin/dashboard": ["ADMIN"],
   "/dashboard": ["SHOP"],
   "/register-shop": ["ADMIN", "SHOP"],
-  "/shop": ["SHOP", "ADMIN", "CUSTOMER"],
+  "/shops": ["SHOP", "ADMIN", "CUSTOMER", "DELIVERY_AGENT", "UNASSIGNED"],
+  "/shop": ["SHOP", "ADMIN"],
   "/profile": ["CUSTOMER", "SHOP", "DELIVERY_AGENT", "UNASSIGNED"],
-  "/discover": ["CUSTOMER", "SHOP", "ADMIN", "UNASSIGNED"],
+  "/discover": ["CUSTOMER", "SHOP", "ADMIN", "DELIVERY_AGENT", "UNASSIGNED"],
   "/deliveries": ["DELIVERY_AGENT"],
 };
 

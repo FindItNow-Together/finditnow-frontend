@@ -53,7 +53,7 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
         <div className="flex-shrink-0">
           {item.imageUrl ? (
             <img
-              src={item.imageUrl}
+              src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + item.imageUrl}
               alt={item.productName}
               className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover"
             />
