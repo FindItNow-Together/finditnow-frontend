@@ -31,7 +31,7 @@ export default function ProductCard({ product, opportunities }: any) {
       {/* Image */}
       {product.imageUrl ? (
         <img
-          src={product.imageUrl}
+          src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + product.imageUrl}
           alt={product.name}
           className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover"
         />

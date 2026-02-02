@@ -413,7 +413,7 @@ export default function ShopDetailsPage() {
           {/* Shop Logo */}
           {shop.imageUrl ? (
             <img
-              src={shop.imageUrl}
+              src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
               alt={shop.name}
               className="w-12 h-12 rounded-full object-cover border border-gray-200"
             />
