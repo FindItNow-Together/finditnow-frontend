@@ -6,12 +6,13 @@ import useApi from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { UserAddress } from "@/types/user";
-import { Edit3, Loader2, MapPin, Plus } from "lucide-react"; // Add Loader2
+import { Edit3, Loader2, MapPin, Plus } from "lucide-react";
 import Modal from "@/app/_components/Modal";
 import CreateAddressModal from "@/app/_components/CreateAddressModal";
 import { Cart } from "@/types/cart";
 
 type Pricing = {
+  distanceKm: number;
   deliveryFee: number;
   tax: number;
   payable: number;
@@ -33,9 +34,10 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   const [checkoutCart, setCheckoutCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [initialAddressId, setInitialAddressId] = useState<string | null>(null); // Track initial address
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [eta, setEta] = useState<DeliveryETA | null>(null);
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false); // Add loading state
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash_on_delivery">("online");
   const [deliveryType, setDeliveryType] = useState<"PARTNER" | "TAKEAWAY">("PARTNER");
   const [instructions, setInstructions] = useState("");
@@ -92,6 +94,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       });
   }, [cartId, cart?.cartId]);
 
+  // Load initial pricing with delivery fee for primary address
   useEffect(() => {
     if (!checkoutCart) return;
 
@@ -101,10 +104,16 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         if (!res.ok) throw new Error("Invalid cart");
         return res.json();
       })
-      .then(setPricing)
+      .then((data: Pricing) => {
+        setPricing(data);
+        // Set ETA from initial pricing
+        if (data.distanceKm) {
+          setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
+        }
+      })
       .catch((err) => {
         console.log(err.message);
-        setPricing({ deliveryFee: 100, payable: 1100, tax: 1000 });
+        setPricing({ distanceKm: 0, deliveryFee: 100, payable: 1100, tax: 1000 });
       });
   }, [checkoutCart]);
 
@@ -112,12 +121,17 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     if (userData?.addresses) {
       setAddresses(userData.addresses);
       const primary = userData.addresses.find((a) => a.isPrimary);
-      if (primary) setSelectedAddressId(primary.id);
+      if (primary) {
+        setSelectedAddressId(primary.id);
+        setInitialAddressId(primary.id); // Track the initial primary address
+      }
     }
   }, [userData]);
 
+  // Only call quote API when address changes (not on initial load)
   useEffect(() => {
-    if (!checkoutCart || !selectedAddressId) return;
+    // Don't call if no address selected or if it's the initial address
+    if (!checkoutCart || !selectedAddressId || selectedAddressId === initialAddressId) return;
 
     if (deliveryType === "TAKEAWAY") {
       setPricing((prev) =>
@@ -131,7 +145,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     setEta(null);
     setIsLoadingQuote(true);
 
-    // Fetch Delivery Quote
+    // Fetch Delivery Quote for new address
     api
       .get(`/api/orders/quote?shopId=${checkoutCart.shopId}&addressId=${selectedAddressId}`, {
         auth: "private",
@@ -140,16 +154,18 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .then((data) => {
         if (data) {
           const newFee = data.amount;
+          const distanceKm = data.distanceKm;
           setPricing((prev) =>
             prev
               ? {
                   ...prev,
+                  distanceKm: distanceKm,
                   deliveryFee: newFee,
                   payable: prev.payable - prev.deliveryFee + newFee,
                 }
               : null
           );
-          setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
+          setEta({ etaText: `${distanceKm} km`, confidence: "medium" });
         }
       })
       .catch((err) => {
@@ -158,7 +174,22 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .finally(() => {
         setIsLoadingQuote(false);
       });
-  }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Add pricing dependency
+  }, [selectedAddressId, deliveryType, checkoutCart?.shopId, initialAddressId]);
+
+  // Handle delivery type change
+  useEffect(() => {
+    if (!pricing) return;
+
+    if (deliveryType === "TAKEAWAY") {
+      setPricing((prev) =>
+        prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
+      );
+      setEta(null);
+    } else if (deliveryType === "PARTNER" && pricing.deliveryFee === 0) {
+      // If switching back to PARTNER from TAKEAWAY, we may need to refetch
+      // This will be handled by the address change effect if needed
+    }
+  }, [deliveryType]);
 
   const canPlaceOrder = useMemo(() => {
     return status === "READY" && checkoutCart && pricing && selectedAddressId !== null;
@@ -324,7 +355,6 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         )}
       </section>
 
-      {/* Rest of the component remains the same */}
       {/* DELIVERY OPTIONS */}
       <section className="bg-white rounded-lg border border-gray-200 p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Options</h2>
