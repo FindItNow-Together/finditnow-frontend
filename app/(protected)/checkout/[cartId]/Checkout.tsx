@@ -6,7 +6,7 @@ import useApi from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { UserAddress } from "@/types/user";
-import { Edit3, MapPin, Plus } from "lucide-react";
+import { Edit3, Loader2, MapPin, Plus } from "lucide-react"; // Add Loader2
 import Modal from "@/app/_components/Modal";
 import CreateAddressModal from "@/app/_components/CreateAddressModal";
 import { Cart } from "@/types/cart";
@@ -35,6 +35,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [eta, setEta] = useState<DeliveryETA | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false); // Add loading state
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash_on_delivery">("online");
   const [deliveryType, setDeliveryType] = useState<"PARTNER" | "TAKEAWAY">("PARTNER");
   const [instructions, setInstructions] = useState("");
@@ -122,10 +123,13 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       setPricing((prev) =>
         prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
       );
+      setEta(null);
       return;
     }
 
+    // Reset ETA and start loading
     setEta(null);
+    setIsLoadingQuote(true);
 
     // Fetch Delivery Quote
     api
@@ -134,7 +138,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && pricing) {
+        if (data) {
           const newFee = data.amount;
           setPricing((prev) =>
             prev
@@ -148,8 +152,13 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
           setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
         }
       })
-      .catch(() => {});
-  }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Re-run when address or delivery type changes
+      .catch((err) => {
+        console.error("Failed to fetch quote:", err);
+      })
+      .finally(() => {
+        setIsLoadingQuote(false);
+      });
+  }, [selectedAddressId, deliveryType, checkoutCart?.shopId]); // Add pricing dependency
 
   const canPlaceOrder = useMemo(() => {
     return status === "READY" && checkoutCart && pricing && selectedAddressId !== null;
@@ -205,13 +214,11 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       amount: payment.amount,
       order_id: payment.razorpayOrderId,
       handler: async function (response: any) {
-        // Payment successful, verify via callback
         console.log("Payment successful, verifying...", response);
         await handlePaymentCallback(response, orderId);
       },
       modal: {
         ondismiss: function () {
-          // User closed the payment modal
           console.log("Payment cancelled by user");
           setStatus("ERROR");
           setError("Payment cancelled. Please try again.");
@@ -223,7 +230,6 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
     });
 
     rzp.on("payment.failed", function (response: any) {
-      // Payment failed
       console.error("Payment failed:", response.error);
       setStatus("ERROR");
       setError(response.error.description || "Payment failed. Please try again.");
@@ -234,7 +240,6 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
 
   async function handlePaymentCallback(response: any, orderId: string) {
     try {
-      // Call backend to verify signature and update payment status
       const callbackRes = await api.post(
         "/api/payments/callback",
         {
@@ -253,7 +258,6 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       const callbackData = await callbackRes.json();
 
       if (callbackData.status === "success") {
-        // Payment verified, redirect to order page
         router.replace(`/orders/${orderId}`);
       } else {
         throw new Error(callbackData.error || "Payment verification failed");
@@ -303,16 +307,24 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
           <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">No address selected</div>
         )}
 
-        {/* ETA */}
-        {eta && (
+        {/* ETA with Loading State */}
+        {deliveryType === "PARTNER" && (
           <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">Estimated delivery:</span> {eta.etaText}
-            </p>
+            {isLoadingQuote ? (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Calculating delivery...</span>
+              </div>
+            ) : eta ? (
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Estimated delivery:</span> {eta.etaText}
+              </p>
+            ) : null}
           </div>
         )}
       </section>
 
+      {/* Rest of the component remains the same */}
       {/* DELIVERY OPTIONS */}
       <section className="bg-white rounded-lg border border-gray-200 p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Options</h2>
@@ -374,15 +386,23 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         ))}
       </section>
 
-      {/* TOTAL */}
+      {/* TOTAL with Loading State */}
       <section className="border-t pt-3">
         <div className="flex justify-between font-semibold">
           <span>Delivery Fee</span>
-          <span>{pricing.deliveryFee > 0 ? `₹${pricing.deliveryFee}` : "Free"}</span>
+          {isLoadingQuote ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <span>{pricing.deliveryFee > 0 ? `₹${pricing.deliveryFee}` : "Free"}</span>
+          )}
         </div>
         <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>₹{pricing?.payable}</span>
+          {isLoadingQuote ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <span>₹{pricing?.payable}</span>
+          )}
         </div>
       </section>
 
@@ -409,7 +429,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       </section>
 
       <button
-        disabled={!canPlaceOrder}
+        disabled={!canPlaceOrder || isLoadingQuote}
         onClick={placeOrder}
         className="w-full bg-blue-600 text-white py-3 rounded disabled:opacity-50"
       >
