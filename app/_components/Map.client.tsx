@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMapEvents } fr
 import { MapLocation } from "@/types/mapLocation";
 import L from "leaflet";
 
-// Fix for default marker icons (for the generic locations)
+// Fix for default marker icons
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import shadowIcon from "leaflet/dist/images/marker-shadow.png";
@@ -24,6 +24,8 @@ type LocationMapProps<T> = {
   renderPopup?: (location: MapLocation<T>) => React.ReactNode;
   onMarkerClick?: (location: MapLocation<T>) => void;
   onMapClick?: (lat: number, lng: number) => void;
+  customIcon?: L.DivIcon | L.Icon; // Add custom icon support
+  useCircleMarker?: boolean; // Option to use circle marker instead
 };
 
 function MapEvents({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
@@ -43,6 +45,8 @@ export function LocationMap<T>({
   renderPopup,
   onMarkerClick,
   onMapClick,
+  customIcon,
+  useCircleMarker = true,
 }: LocationMapProps<T>) {
   const center = userLocation ? [userLocation.lat, userLocation.lng] : [20.5937, 78.9629];
 
@@ -61,20 +65,32 @@ export function LocationMap<T>({
 
         <MapEvents onMapClick={onMapClick} />
 
-        {/* Styled CircleMarker for the selected/user position */}
+        {/* User/Selected location - use custom icon if provided, otherwise circle marker */}
         {userLocation && (
-          <CircleMarker
-            center={[userLocation.lat, userLocation.lng]}
-            radius={10}
-            pathOptions={{
-              color: "#2563eb",
-              fillColor: "#3b82f6",
-              fillOpacity: 0.8,
-              weight: 2,
-            }}
-          >
-            <Popup>Selected Shop Location</Popup>
-          </CircleMarker>
+          <>
+            {customIcon ? (
+              <Marker position={[userLocation.lat, userLocation.lng]} icon={customIcon}>
+                <Popup>Delivery Agent Location</Popup>
+              </Marker>
+            ) : useCircleMarker ? (
+              <CircleMarker
+                center={[userLocation.lat, userLocation.lng]}
+                radius={10}
+                pathOptions={{
+                  color: "#2563eb",
+                  fillColor: "#3b82f6",
+                  fillOpacity: 0.8,
+                  weight: 2,
+                }}
+              >
+                <Popup>Selected Location</Popup>
+              </CircleMarker>
+            ) : (
+              <Marker position={[userLocation.lat, userLocation.lng]}>
+                <Popup>Selected Location</Popup>
+              </Marker>
+            )}
+          </>
         )}
 
         {/* Generic markers for existing shops/locations */}

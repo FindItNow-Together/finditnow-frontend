@@ -11,6 +11,7 @@ import ToasterProvider from "@/app/_components/ToasterProvider";
 
 import { URL } from "node:url";
 import Script from "next/script";
+import WebSocketProvider from "@/contexts/WebSocketContext";
 
 export function getBaseUrl(envUrl?: string): string {
   const baseUrl = envUrl ?? "http://localhost";
@@ -103,8 +104,10 @@ export default async function RootLayout({
 
         <AuthProvider auth={auth}>
           <CartProvider>
-            <Navbar />
-            {children}
+            <WebSocketProvider>
+              <Navbar />
+              {children}
+            </WebSocketProvider>
           </CartProvider>
         </AuthProvider>
       </body>

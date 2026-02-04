@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useApi from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { UserAddress } from "@/types/user";
-import { Edit3, Loader2, MapPin, Plus } from "lucide-react";
+import { Edit3, MapPin, Plus, Loader2 } from "lucide-react";
 import Modal from "@/app/_components/Modal";
 import CreateAddressModal from "@/app/_components/CreateAddressModal";
 import { Cart } from "@/types/cart";
@@ -34,8 +34,9 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
   const [checkoutCart, setCheckoutCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [initialAddressId, setInitialAddressId] = useState<string | null>(null); // Track initial address
+  const isFirstLoad = useRef(true);
   const [pricing, setPricing] = useState<Pricing | null>(null);
+  const [originalDeliveryFee, setOriginalDeliveryFee] = useState<number>(0); // Store original fee
   const [eta, setEta] = useState<DeliveryETA | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash_on_delivery">("online");
@@ -106,6 +107,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       })
       .then((data: Pricing) => {
         setPricing(data);
+        setOriginalDeliveryFee(data.deliveryFee); // Store original fee
         // Set ETA from initial pricing
         if (data.distanceKm) {
           setEta({ etaText: `${data.distanceKm} km`, confidence: "medium" });
@@ -114,6 +116,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .catch((err) => {
         console.log(err.message);
         setPricing({ distanceKm: 0, deliveryFee: 100, payable: 1100, tax: 1000 });
+        setOriginalDeliveryFee(100);
       });
   }, [checkoutCart]);
 
@@ -123,22 +126,22 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       const primary = userData.addresses.find((a) => a.isPrimary);
       if (primary) {
         setSelectedAddressId(primary.id);
-        setInitialAddressId(primary.id); // Track the initial primary address
       }
     }
   }, [userData]);
 
-  // Only call quote API when address changes (not on initial load)
+  // Call quote API when address changes (but skip first load)
   useEffect(() => {
-    // Don't call if no address selected or if it's the initial address
-    if (!checkoutCart || !selectedAddressId || selectedAddressId === initialAddressId) return;
+    if (!checkoutCart || !selectedAddressId) return;
+
+    // Skip the quote API call on first load
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
 
     if (deliveryType === "TAKEAWAY") {
-      setPricing((prev) =>
-        prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
-      );
-      setEta(null);
-      return;
+      return; // Don't fetch quote for takeaway
     }
 
     // Reset ETA and start loading
@@ -155,6 +158,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         if (data) {
           const newFee = data.amount;
           const distanceKm = data.distanceKm;
+          setOriginalDeliveryFee(newFee); // Store the new fee
           setPricing((prev) =>
             prev
               ? {
@@ -174,7 +178,7 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
       .finally(() => {
         setIsLoadingQuote(false);
       });
-  }, [selectedAddressId, deliveryType, checkoutCart?.shopId, initialAddressId]);
+  }, [selectedAddressId, checkoutCart?.shopId]);
 
   // Handle delivery type change
   useEffect(() => {
@@ -185,9 +189,21 @@ export default function CheckoutClient({ cartId }: { cartId: string }) {
         prev ? { ...prev, deliveryFee: 0, payable: prev.payable - prev.deliveryFee } : null
       );
       setEta(null);
-    } else if (deliveryType === "PARTNER" && pricing.deliveryFee === 0) {
-      // If switching back to PARTNER from TAKEAWAY, we may need to refetch
-      // This will be handled by the address change effect if needed
+    } else if (deliveryType === "PARTNER") {
+      // Restore original delivery fee when switching back to PARTNER
+      setPricing((prev) =>
+        prev
+          ? {
+              ...prev,
+              deliveryFee: originalDeliveryFee,
+              payable: prev.payable - prev.deliveryFee + originalDeliveryFee,
+            }
+          : null
+      );
+      // Restore ETA if we have distance
+      if (pricing.distanceKm) {
+        setEta({ etaText: `${pricing.distanceKm} km`, confidence: "medium" });
+      }
     }
   }, [deliveryType]);
 
