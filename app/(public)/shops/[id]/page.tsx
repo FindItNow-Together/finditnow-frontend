@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
 import { useParams } from "next/navigation";
@@ -24,42 +24,42 @@ export default function ShopPage() {
   useEffect(() => {
     if (!id) return;
     api.shopApi.getShop(Number(id)).then(setShop).catch(console.error);
-  }, [id, api]);
+  }, [id]);
 
   // Search in Shop
-  const fetchOpportunities = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (debQuery) params.set("q", String(debQuery));
-      if (category !== "all") params.set("category", category);
-
-      // Pass shopId to restrict search
-      params.set("shopId", String(id));
-
-      // Note: We might want location here too if distance is relevant within a shop (probably not as much, but API expects it for sorting?)
-      // For now, let's omit location or use a default if needed.
-      // Actually the backend calculates distance only if userLoc is provided.
-      // But for "in-shop" search, maybe we just want to know availability.
-
-      const res = await api.get(`/api/search/products?${params.toString()}`);
-      if (!res.ok) throw new Error();
-
-      const body = await res.json();
-      const opportunities = body?.data?.content || [];
-      setOpportunities(opportunities);
-    } catch (e) {
-      console.error(e);
-      setOpportunities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [debQuery, category, id, api]);
 
   useEffect(() => {
+    const fetchOpportunities = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (debQuery) params.set("q", String(debQuery));
+        if (category !== "all") params.set("category", category);
+
+        // Pass shopId to restrict search
+        params.set("shopId", String(id));
+
+        // Note: We might want location here too if distance is relevant within a shop (probably not as much, but API expects it for sorting?)
+        // For now, let's omit location or use a default if needed.
+        // Actually the backend calculates distance only if userLoc is provided.
+        // But for "in-shop" search, maybe we just want to know availability.
+
+        const res = await api.get(`/api/search/products?${params.toString()}`);
+        if (!res.ok) throw new Error();
+
+        const body = await res.json();
+        const opportunities = body?.data?.content || [];
+        setOpportunities(opportunities);
+      } catch (e) {
+        console.error(e);
+        setOpportunities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchOpportunities();
-  }, [fetchOpportunities]);
+  }, []);
 
   /* derive products */
   const products = Array.from(

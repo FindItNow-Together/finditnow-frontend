@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Calendar, ChevronRight, Loader2, Truck } from "lucide-react";
+import { Calendar, Loader2, Truck } from "lucide-react";
 import useApi from "@/hooks/useApi";
 import { DeliveryResponse, PagedDeliveryResponse } from "@/types/delivery";
 import { toast } from "sonner";
@@ -88,7 +88,7 @@ export default function DeliveriesPage() {
         watchIdRef.current = null;
       }
     };
-  }, [deliveries, socket, connect, disconnect]);
+  }, [deliveries, socket]);
 
   const format = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -142,11 +142,34 @@ export default function DeliveriesPage() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    const run = async () => {
+      const res = await get("/api/delivery-agent/my-status", { auth: "private" });
+      const status = await res.json();
+      setAgentStatus(status);
+    };
+    run();
   }, []);
 
   useEffect(() => {
-    fetchDeliveries();
+    const run = async () => {
+      try {
+        setLoading(true);
+        const response = (await deliveryApi.getMyDeliveries(
+          undefined,
+          0,
+          50
+        )) as PagedDeliveryResponse;
+
+        setDeliveries(response.deliveries || []);
+      } catch (err) {
+        console.error("Failed to fetch deliveries", err);
+        setDeliveries([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, []);
 
   const activeDeliveries = deliveries.filter(

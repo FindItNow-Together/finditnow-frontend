@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
 
@@ -32,41 +32,42 @@ export default function DiscoverClient() {
     );
   }, []);
 
-  const fetchOpportunities = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (debQuery) params.set("q", String(debQuery));
-      if (category !== "all") params.set("category", category);
-      if (userLoc) {
-        params.set("lat", String(userLoc.lat));
-        params.set("lng", String(userLoc.lng));
-      }
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (debQuery) params.set("q", String(debQuery));
+        if (category !== "all") params.set("category", category);
+        if (userLoc) {
+          params.set("lat", String(userLoc.lat));
+          params.set("lng", String(userLoc.lng));
+        }
 
-      const res = await api.get(`/api/search/products?${params.toString()}`);
-      if (!res.ok) throw new Error();
+        const res = await api.get(`/api/search/products?${params.toString()}`);
+        if (!res.ok) throw new Error();
 
-      const body = await res.json();
-      const opportunities = body?.data?.content;
-      if (!Array.isArray(opportunities)) {
-        throw new Error("Invalid response shape");
-      }
+        const body = await res.json();
+        const opportunities = body?.data?.content;
 
-      if (opportunities.length != 0) {
-        setOpportunities(opportunities);
-        setUsingMock(false);
-      } else {
+        if (!Array.isArray(opportunities)) {
+          throw new Error("Invalid response shape");
+        }
+
+        if (opportunities.length !== 0) {
+          setOpportunities(opportunities);
+          setUsingMock(false);
+        } else {
+          setOpportunities(STATIC_OPPORTUNITIES);
+          setUsingMock(true);
+        }
+      } catch {
         setOpportunities(STATIC_OPPORTUNITIES);
         setUsingMock(true);
       }
-    } catch {
-      setOpportunities(STATIC_OPPORTUNITIES);
-      setUsingMock(true);
-    }
-  }, [debQuery, category, userLoc]);
+    };
 
-  useEffect(() => {
     fetchOpportunities();
-  }, [fetchOpportunities]);
+  }, [debQuery, category, userLoc]);
 
   /* derive products */
   const products = Array.from(

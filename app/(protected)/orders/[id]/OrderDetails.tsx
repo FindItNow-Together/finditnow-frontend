@@ -95,7 +95,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     }
 
     return () => disconnect();
-  }, [orderId, delivery?.status, connect, disconnect]);
+  }, [orderId, delivery?.status]);
 
   // Handle Incoming WebSocket Messages
   useEffect(() => {

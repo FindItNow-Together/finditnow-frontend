@@ -44,7 +44,7 @@ export default function OrdersSection({ orders, onOrdersLoad }: OrdersSectionPro
     };
 
     fetchOrders();
-  }, [orders, api, onOrdersLoad]);
+  }, [orders]);
 
   // Filter orders based on search query
   const filteredOrders = orders?.filter((order) => {

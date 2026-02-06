@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import useApi from "@/hooks/useApi";
 import { Cart, CartResponse } from "@/types/cart";
 
@@ -46,32 +46,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const api = useApi();
 
-  const setCart = useCallback((c: Cart) => {
+  const setCart = (c: Cart) => {
     setCartState(c);
     setError(null);
-  }, []);
+  };
 
-  const clearCartState = useCallback(() => {
+  const clearCartState = () => {
     setCartState(null);
     setError(null);
-  }, []);
+  };
 
-  const itemCount = useMemo(() => {
-    return cart?.totalItems ?? 0;
-  }, [cart]);
+  const itemCount = cart?.totalItems ?? 0;
 
   // Get available stock for a product (used for validation)
-  const availableStock = useCallback(
-    (productId: number): number => {
-      const item = cart?.items.find((i) => i.inventoryId === productId);
-      return item?.quantity ?? 0;
-    },
-    [cart]
-  );
+  const availableStock = (productId: number): number => {
+    const item = cart?.items.find((i) => i.inventoryId === productId);
+    return item?.quantity ?? 0;
+  };
 
   // Load cart for a specific shop
   // UPDATED: No longer needs userData.id, uses /me endpoint
-  const loadCart = useCallback(async () => {
+  const loadCart = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -88,138 +83,123 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [api]);
+  };
 
   // Add item to cart
-  const addToCart = useCallback(
-    async (inventoryItem: ShopInventoryItem, quantity: number = 1) => {
-      setIsLoading(true);
-      setError(null);
+  const addToCart = async (inventoryItem: ShopInventoryItem, quantity: number = 1) => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        // Validate stock availability
-        const availableStock = inventoryItem.stock - inventoryItem.reservedStock;
-        if (quantity > availableStock) {
-          throw new Error(`Only ${availableStock} items available in stock`);
-        }
-
-        // Check if adding to different shop's cart
-        if (cart && cart.shopId !== inventoryItem.shopId) {
-          const confirmed = confirm(
-            "Your cart contains items from a different shop. Do you want to clear your cart and add this item?"
-          );
-          if (!confirmed) {
-            setIsLoading(false);
-            return;
-          }
-          // Clear existing cart first
-          if (cart.cartId) {
-            await api.cartApi.clearCart(cart.cartId);
-          }
-          setCartState(null);
-        }
-
-        // Call API to add to cart
-        const response = (await api.cartApi.addItem({
-          inventoryId: inventoryItem.id,
-          shopId: inventoryItem.shopId,
-          quantity,
-        })) as CartResponse;
-
-        setCartState(response as Cart);
-      } catch (err: any) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
+    try {
+      // Validate stock availability
+      const availableStock = inventoryItem.stock - inventoryItem.reservedStock;
+      if (quantity > availableStock) {
+        throw new Error(`Only ${availableStock} items available in stock`);
       }
-    },
-    [cart, api]
-  );
+
+      // Check if adding to different shop's cart
+      if (cart && cart.shopId !== inventoryItem.shopId) {
+        const confirmed = confirm(
+          "Your cart contains items from a different shop. Do you want to clear your cart and add this item?"
+        );
+        if (!confirmed) {
+          setIsLoading(false);
+          return;
+        }
+        // Clear existing cart first
+        if (cart.cartId) {
+          await api.cartApi.clearCart(cart.cartId);
+        }
+        setCartState(null);
+      }
+
+      // Call API to add to cart
+      const response = (await api.cartApi.addItem({
+        inventoryId: inventoryItem.id,
+        shopId: inventoryItem.shopId,
+        quantity,
+      })) as CartResponse;
+
+      setCartState(response as Cart);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Remove item from cart
   // UPDATED: No longer reloads cart, backend now returns updated cart
-  const removeFromCart = useCallback(
-    async (cartItemId: string) => {
-      if (!cart) return;
+  const removeFromCart = async (cartItemId: string) => {
+    if (!cart) return;
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        await api.cartApi.removeItem(cartItemId);
+    try {
+      await api.cartApi.removeItem(cartItemId);
 
-        // Reload the cart to get updated state
-        await loadCart();
-      } catch (err: any) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [cart, api, loadCart]
-  );
+      // Reload the cart to get updated state
+      await loadCart();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Update quantity to specific value
-  const updateQuantity = useCallback(
-    async (cartItemId: string, quantity: number) => {
-      if (!cart) return;
+  const updateQuantity = async (cartItemId: string, quantity: number) => {
+    if (!cart) return;
 
-      if (quantity < 1) {
-        throw new Error("Quantity must be at least 1");
-      }
+    if (quantity < 1) {
+      throw new Error("Quantity must be at least 1");
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const response = (await api.cartApi.updateItem(cartItemId, { quantity })) as CartResponse;
-        setCartState(response as Cart);
-      } catch (err: any) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [cart, api]
-  );
+    try {
+      const response = (await api.cartApi.updateItem(cartItemId, { quantity })) as CartResponse;
+      setCartState(response as Cart);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Increase quantity by 1
-  const increaseQuantity = useCallback(
-    async (cartItemId: string) => {
-      if (!cart) return;
+  const increaseQuantity = async (cartItemId: string) => {
+    if (!cart) return;
 
-      const item = cart.items.find((i) => i.itemId === cartItemId);
-      if (!item) return;
+    const item = cart.items.find((i) => i.itemId === cartItemId);
+    if (!item) return;
 
-      await updateQuantity(cartItemId, item.quantity + 1);
-    },
-    [cart, updateQuantity]
-  );
+    await updateQuantity(cartItemId, item.quantity + 1);
+  };
 
   // Decrease quantity by 1
-  const decreaseQuantity = useCallback(
-    async (cartItemId: string) => {
-      if (!cart) return;
+  const decreaseQuantity = async (cartItemId: string) => {
+    if (!cart) return;
 
-      const item = cart.items.find((i) => i.itemId === cartItemId);
-      if (!item) return;
+    const item = cart.items.find((i) => i.itemId === cartItemId);
+    if (!item) return;
 
-      // If quantity is 1, remove item instead
-      if (item.quantity === 1) {
-        await removeFromCart(cartItemId);
-        return;
-      }
+    // If quantity is 1, remove item instead
+    if (item.quantity === 1) {
+      await removeFromCart(cartItemId);
+      return;
+    }
 
-      await updateQuantity(cartItemId, item.quantity - 1);
-    },
-    [cart, removeFromCart, updateQuantity]
-  );
+    await updateQuantity(cartItemId, item.quantity - 1);
+  };
 
   // Clear entire cart
-  const clearCart = useCallback(async () => {
+  const clearCart = async () => {
     if (!cart?.cartId) return;
 
     setIsLoading(true);
@@ -234,7 +214,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [cart, api]);
+  };
 
   return (
     <CartContext.Provider
