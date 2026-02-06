@@ -59,6 +59,7 @@ async function fetchAuth(): Promise<AuthInfo | null> {
       Cookie: cookie.toString(),
     },
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -73,6 +74,7 @@ async function fetchAuth(): Promise<AuthInfo | null> {
       Authorization: "Bearer " + authData.accessToken,
     },
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {

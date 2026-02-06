@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMapEvents } from "react-leaflet";
+import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaflet";
 import { MapLocation } from "@/types/mapLocation";
 import L from "leaflet";
 
@@ -8,6 +8,9 @@ import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import shadowIcon from "leaflet/dist/images/marker-shadow.png";
+import RecenterMap from "@/app/_components/Map/RecenterMap";
+import { useMemo } from "react";
+import FitBounds from "@/app/_components/Map/FitBounds";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -50,6 +53,14 @@ export function LocationMap<T>({
 }: LocationMapProps<T>) {
   const center = userLocation ? [userLocation.lat, userLocation.lng] : [20.5937, 78.9629];
 
+  const points: [number, number][] = useMemo(
+    () => [
+      ...(userLocation ? [[userLocation.lat, userLocation.lng] as [number, number]] : []),
+      ...locations.map((l) => [l.lat, l.lng] as [number, number]),
+    ],
+    [userLocation, locations]
+  );
+
   return (
     <div className="bg-gray-100 rounded overflow-hidden" style={{ height }}>
       <MapContainer
@@ -64,6 +75,8 @@ export function LocationMap<T>({
         />
 
         <MapEvents onMapClick={onMapClick} />
+        {userLocation && <RecenterMap lat={userLocation.lat} lng={userLocation.lng} zoom={zoom} />}
+        <FitBounds points={points} />
 
         {/* User/Selected location - use custom icon if provided, otherwise circle marker */}
         {userLocation && (

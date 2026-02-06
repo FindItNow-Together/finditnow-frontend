@@ -18,7 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { OrderResponse } from "@/types/order";
-import LocationMap from "@/app/_components/Map";
+import LocationMap from "@/app/_components/Map/Map";
 import L from "leaflet";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 

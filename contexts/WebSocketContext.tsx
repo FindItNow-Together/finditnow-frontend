@@ -61,7 +61,7 @@ export default function WebSocketProvider({ children }: { children: React.ReactN
         console.error("Failed to establish secure WebSocket:", err);
       }
     },
-    [accessToken]
+    [accessToken, api]
   );
 
   return (

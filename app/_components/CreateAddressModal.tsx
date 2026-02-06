@@ -1,6 +1,6 @@
 "use client";
 import Modal from "@/app/_components/Modal";
-import LocationMap from "@/app/_components/Map";
+import LocationMap from "@/app/_components/Map/Map";
 import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from "react";
 import { UserAddress } from "@/types/user";
 import useApi from "@/hooks/useApi";
