@@ -11,6 +11,7 @@ import ToasterProvider from "@/app/_components/ToasterProvider";
 
 import { URL } from "node:url";
 import Script from "next/script";
+import WebSocketProvider from "@/contexts/WebSocketContext";
 
 export function getBaseUrl(envUrl?: string): string {
   const baseUrl = envUrl ?? "http://localhost";
@@ -58,6 +59,7 @@ async function fetchAuth(): Promise<AuthInfo | null> {
       Cookie: cookie.toString(),
     },
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -72,6 +74,7 @@ async function fetchAuth(): Promise<AuthInfo | null> {
       Authorization: "Bearer " + authData.accessToken,
     },
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -103,8 +106,10 @@ export default async function RootLayout({
 
         <AuthProvider auth={auth}>
           <CartProvider>
-            <Navbar />
-            {children}
+            <WebSocketProvider>
+              <Navbar />
+              {children}
+            </WebSocketProvider>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -41,7 +41,7 @@ export default function Navbar() {
 
   useEffect(() => {
     loadCart();
-  }, [loadCart]);
+  }, []);
 
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     return null;

@@ -5,9 +5,11 @@ import useApi from "@/hooks/useApi";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Box,
+  Bike,
   Calendar,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
   Clock,
   CreditCard,
   MapPin,
@@ -16,8 +18,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { OrderResponse } from "@/types/order";
+import LocationMap from "@/app/_components/Map/Map";
+import L from "leaflet";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
-const CANCELLABLE_STATUSES = ["created", "confirmed", "paid"];
+const CANCELLABLE_STATUSES = ["created", "confirmed", "paid", "pending_confirmation"];
 
 function isCancellable(order: OrderResponse): boolean {
   return CANCELLABLE_STATUSES.includes(order.status.toLowerCase());
@@ -30,6 +35,7 @@ interface PageProps {
 const OrderDetails = ({ id: orderId }: PageProps) => {
   const router = useRouter();
   const api = useApi();
+  const { socket, connect, disconnect } = useWebSocket();
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [delivery, setDelivery] = useState<any | null>(null);
@@ -38,6 +44,8 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [agentLocation, setAgentLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const fetchOrder = async () => {
     try {
@@ -63,11 +71,53 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
       if (response.ok) {
         const data = await response.json();
         setDelivery(data);
+
+        // Mock agent location for demonstration (replace with actual API data)
+        if (data.status === "PICKED_UP" || data.status === "ASSIGNED") {
+          setAgentLocation({
+            lat: data.currentLatitude || 18.52, // Replace with actual coordinates from API
+            lng: data.currentLongitude || 73.85,
+          });
+        }
       }
     } catch (e) {
       console.error("Failed to fetch delivery", e);
     }
   };
+
+  // Connect/Disconnect WebSocket based on order state
+  useEffect(() => {
+    const trackableStatuses = ["PICKED_UP", "ASSIGNED"];
+
+    if (orderId && delivery && trackableStatuses.includes(delivery.status)) {
+      connect(orderId);
+      setMapExpanded(true); // Auto-expand map when tracking starts
+    }
+
+    return () => disconnect();
+  }, [orderId, delivery?.status]);
+
+  // Handle Incoming WebSocket Messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "LOCATION_UPDATE") {
+          setAgentLocation({
+            lat: data.lat,
+            lng: data.lng,
+          });
+        }
+      } catch (err) {
+        console.error("WS Message Error:", err);
+      }
+    };
+
+    socket.addEventListener("message", handleMessage);
+    return () => socket.removeEventListener("message", handleMessage);
+  }, [socket]);
 
   useEffect(() => {
     if (orderId) {
@@ -129,44 +179,74 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
   const isCancelled = order?.status?.toLowerCase() === "cancelled";
   const cancelReasonValid = cancelReason.trim().length >= 5;
 
-  // Dummy delivery updates data
+  // Create bike icon for delivery agent
+  const bikeIcon = L.divIcon({
+    html: `
+      <div style="
+        background-color: #10b981;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 3px solid white;
+      ">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="18.5" cy="17.5" r="3.5"/>
+          <circle cx="5.5" cy="17.5" r="3.5"/>
+          <circle cx="15" cy="5" r="1"/>
+          <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+        </svg>
+      </div>
+    `,
+    className: "",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+  });
+
+  // Delivery updates data
   const deliveryUpdates = [
-    {
-      status: "Delivered",
-      date: "Expected by tomorrow",
-      completed: false,
-      icon: CheckCircle,
-      description: "Package will be delivered to your address",
-    },
-    {
-      status: "Out for Delivery",
-      date: "Today, 9:00 AM",
-      completed: false,
-      icon: Truck,
-      description: "Agent is on the way to your location",
-    },
-    {
-      status: "Shipped",
-      date: "Yesterday, 4:30 PM",
-      completed: true,
-      icon: Truck,
-      description: "Package has left the facility",
-    },
-    {
-      status: "Packed",
-      date: "Yesterday, 2:00 PM",
-      completed: true,
-      icon: Box,
-      description: "Seller has packed your order",
-    },
     {
       status: "Order Placed",
       date: formatDate(order?.createdAt),
       completed: true,
       icon: Package,
-      description: "Order has been confirmed",
+      description: "Order has been received",
     },
   ];
+
+  // Add pending confirmation step
+  const isPendingOrBeyond =
+    order &&
+    [
+      "pending_confirmation",
+      "confirmed",
+      "paid",
+      "preparing",
+      "ready",
+      "picked_up",
+      "delivered",
+    ].includes(order.status.toLowerCase());
+
+  deliveryUpdates.push({
+    status: "Pending Confirmation",
+    date: isPendingOrBeyond ? "Completed" : "Waiting for shop",
+    completed: !!isPendingOrBeyond,
+    icon: Clock,
+    description: "Waiting for shop to confirm your order",
+  });
 
   if (delivery) {
     const statusMap: Record<string, number> = {
@@ -185,8 +265,6 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
     ];
 
     steps.forEach((step, idx) => {
-      // Only show steps relevant to the flow (simplified)
-      // Or show all and mark completed
       const isCompleted = idx <= currentLevel;
       const isCurrent = idx === currentLevel;
 
@@ -198,10 +276,12 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
         description: step.desc,
       });
     });
-  } else {
-    // Fallback or "Self Pickup" logic could go here
-    // For now, if no delivery record found (maybe just created), show generic
   }
+
+  const showAgentMap =
+    delivery &&
+    (delivery.status === "PICKED_UP" || delivery.status === "ASSIGNED") &&
+    agentLocation;
 
   if (loading) {
     return (
@@ -286,7 +366,49 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
               </div>
             </div>
 
-            {/* Delivery Status Timeline (Dummy Data) */}
+            {/* Delivery Agent Map (Expandable) */}
+            {showAgentMap && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setMapExpanded(!mapExpanded)}
+                  className="w-full p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between"
+                >
+                  <h2 className="font-semibold text-gray-900 flex items-center">
+                    <Bike className="w-5 h-5 mr-2 text-green-600" />
+                    Live Tracking
+                    {socket && (
+                      <span
+                        className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                        title="Live"
+                      />
+                    )}
+                  </h2>
+                  {mapExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
+                {mapExpanded && (
+                  <div className="p-4">
+                    <LocationMap
+                      userLocation={agentLocation}
+                      zoom={15}
+                      height="400px"
+                      customIcon={bikeIcon}
+                    />
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium flex items-center">
+                        <Bike className="w-4 h-4 mr-2" />
+                        {socket ? "Real-time updates active" : "Waiting for agent location..."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Delivery Status Timeline */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-4 border-b border-gray-200 bg-gray-50">
                 <h2 className="font-semibold text-gray-900 flex items-center">
@@ -352,7 +474,11 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
                     <p className="text-sm font-medium text-gray-900">Status</p>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize mt-1 ${
-                        isCancelled ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                        isCancelled
+                          ? "bg-red-100 text-red-800"
+                          : order.status.toLowerCase() === "pending_confirmation"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-blue-100 text-blue-800"
                       }`}
                     >
                       {order.status.replace(/_/g, " ")}
@@ -392,8 +518,7 @@ const OrderDetails = ({ id: orderId }: PageProps) => {
                 <div>
                   <p className="text-sm font-medium text-gray-900">Delivery Address</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {/* Note: In a real app we'd fetch the full address details */}
-                    Delivery Location ID: {order.deliveryAddressId}
+                    {delivery?.deliveryAddress || `Address ID: ${order.deliveryAddressId}`}
                   </p>
                 </div>
               </div>

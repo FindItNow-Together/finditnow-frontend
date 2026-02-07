@@ -84,14 +84,14 @@ export default function GlobalSearch() {
   };
 
   const handleShopClick = (shopId: number) => {
-    router.push(`/shop/${shopId}`);
+    router.push(`/shops/${shopId}`);
     setIsOpen(false);
     setQuery("");
     setDebounceQuery("");
   };
 
   const handleProductClick = (shopId: number) => {
-    router.push(`/shop/${shopId}`);
+    router.push(`/shops/${shopId}`);
     setIsOpen(false);
     setQuery("");
     setDebounceQuery("");

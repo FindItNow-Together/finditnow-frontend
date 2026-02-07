@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, ChevronRight, Loader2, Truck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Calendar, Loader2, Truck } from "lucide-react";
 import useApi from "@/hooks/useApi";
 import { DeliveryResponse, PagedDeliveryResponse } from "@/types/delivery";
+import { toast } from "sonner";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 const statusColors: Record<string, string> = {
   CREATED: "bg-gray-100 text-gray-800",
@@ -37,6 +39,57 @@ export default function DeliveriesPage() {
 
   const { deliveryApi, get, put } = useApi();
 
+  const { socket, connect, disconnect } = useWebSocket(); // 2. Destructure WS
+  const watchIdRef = useRef<number | null>(null);
+
+  // Logic to handle Geo-broadcasting via WebSocket
+  useEffect(() => {
+    // Find if there is any delivery currently in progress
+    const activeJob = deliveries.find((d) =>
+      ["ASSIGNED", "PICKED_UP", "IN_TRANSIT"].includes(d.status)
+    );
+
+    if (activeJob) {
+      // Connect to WS for this specific order
+      connect(activeJob.orderId);
+
+      // Start watching location
+      if ("geolocation" in navigator && !watchIdRef.current) {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            if (socket?.readyState === WebSocket.OPEN) {
+              socket.send(
+                JSON.stringify({
+                  type: "LOCATION_UPDATE",
+                  orderId: activeJob.orderId,
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                })
+              );
+              console.log("Location sent for order:", activeJob.orderId);
+            }
+          },
+          (err) => console.error("Geolocation error:", err),
+          { enableHighAccuracy: true }
+        );
+      }
+    } else {
+      // Cleanup if no active job exists
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      disconnect();
+    }
+
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [deliveries, socket]);
+
   const format = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -61,7 +114,7 @@ export default function DeliveriesPage() {
       // ACTIVE = ASSIGNED, PICKED_UP
       // PAST = DELIVERED, CANCELLED
       // Since fetching multiple statuses might need multiple calls or backend change,
-      // I'll fetch everything and filter client-side for now, or just fetch page 0.
+      // fetch everything and filter client-side for now, or just fetch page 0.
 
       const response = (await deliveryApi.getMyDeliveries(
         undefined,
@@ -89,11 +142,34 @@ export default function DeliveriesPage() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    const run = async () => {
+      const res = await get("/api/delivery-agent/my-status", { auth: "private" });
+      const status = await res.json();
+      setAgentStatus(status);
+    };
+    run();
   }, []);
 
   useEffect(() => {
-    fetchDeliveries();
+    const run = async () => {
+      try {
+        setLoading(true);
+        const response = (await deliveryApi.getMyDeliveries(
+          undefined,
+          0,
+          50
+        )) as PagedDeliveryResponse;
+
+        setDeliveries(response.deliveries || []);
+      } catch (err) {
+        console.error("Failed to fetch deliveries", err);
+        setDeliveries([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, []);
 
   const activeDeliveries = deliveries.filter(
@@ -165,11 +241,11 @@ export default function DeliveriesPage() {
     try {
       setActionLoading(deliveryId);
       await deliveryApi.accept(deliveryId);
-      await fetchDeliveries();
-      alert("Delivery accepted! You can now start the pickup.");
+      await fetchDeliveries(); // This updates the 'deliveries' state, triggering the useEffect above
+      toast.success("Delivery accepted! Live tracking started.");
     } catch (err) {
       console.error("Failed to accept delivery", err);
-      alert("Failed to accept delivery. Please try again.");
+      toast.error("Failed to accept delivery. Please try again.");
     } finally {
       setActionLoading(null);
     }
