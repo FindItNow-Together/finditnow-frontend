@@ -2,27 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  //remove rewrites when actual production is setup
+  //this is for backend prod + local frontend setup
   async rewrites() {
     return [
       {
-        source: "/api/auth/:path*",
-        destination: "http://localhost:8080/api/auth/:path*",
-      },
-      {
-        source: "/api/user/:path*",
-        destination: "http://localhost:8081/api/user/:path*",
-      },
-      {
-        source: "/api/shop/:path*",
-        destination: "http://localhost:8083/api/shop/:path*",
-      },
-      {
-        source: "/api/order/:path*",
-        destination: "http://localhost:8084/api/order/:path*",
-      },
-      {
-        source: "/api/delivery/:path*",
-        destination: "http://localhost:8086/api/delivery/:path*",
+        source: "/api/:path*",
+        destination: "https://finditnow-together.duckdns.org/api/:path*",
       },
     ];
   },
