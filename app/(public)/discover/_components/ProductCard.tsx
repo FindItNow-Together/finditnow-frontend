@@ -1,8 +1,14 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { Opportunity } from "../types";
 
-export default function ProductCard({ product, opportunities }: any) {
+interface ProductCardProps {
+  product: Opportunity["product"];
+  opportunities: Opportunity[];
+}
+
+export default function ProductCard({ product, opportunities }: ProductCardProps) {
   const { addToCart } = useCart();
   const router = useRouter();
   const pathname = usePathname();
