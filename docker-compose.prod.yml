@@ -1,9 +1,0 @@
-services:
-  frontend:
-    image: ghcr.io/${IMAGE_OWNER}/finditnow-frontend:latest
-    container_name: finditnow-frontend-prod
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
