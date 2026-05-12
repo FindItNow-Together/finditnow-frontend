@@ -20,7 +20,7 @@ function SignUp() {
     const payload = Object.fromEntries(formData.entries());
 
     try {
-      const res = await api.post("/api/auth/signup", payload);
+      const res = await api.post("/api/auth/signup", payload, { auth: "public" });
       let data;
 
       try {

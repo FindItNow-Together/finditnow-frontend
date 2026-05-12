@@ -25,7 +25,7 @@ export default function ShopPage() {
   // Fetch Shop Details
   useEffect(() => {
     if (!id) return;
-    api.shopApi.getShop(Number(id)).then(setShop).catch(console.error);
+    api.shopApi.getShop(Number(id), 'public').then(setShop).catch(console.error);
   }, [id]);
 
   // Search in Shop
@@ -47,7 +47,7 @@ export default function ShopPage() {
         // Actually the backend calculates distance only if userLoc is provided.
         // But for "in-shop" search, maybe we just want to know availability.
 
-        const res = await api.get(`/api/search/products?${params.toString()}`);
+        const res = await api.get(`/api/search/products?${params.toString()}`, { auth: 'public' });
         if (!res.ok) throw new Error();
 
         const body = await res.json();

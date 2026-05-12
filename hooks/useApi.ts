@@ -222,7 +222,7 @@ export default function useApi() {
         requestJson("GET", `/api/shop/mine?page=${page}&size=${size}`),
       getAllShops: (page = 0, size = 10) =>
         requestJson("GET", `/api/shop/all?page=${page}&size=${size}`),
-      getShop: (id: number) => requestJson("GET", `/api/shop/${id}`),
+      getShop: (id: number, auth: ApiAccess = "private") => requestJson("GET", `/api/shop/${id}`, null, auth),
       updateShop: (id: number, data: any) => requestJson("PUT", `/api/shop/${id}`, data),
       delete: (id: number) => requestJson("DELETE", `/api/shop/${id}`),
       deleteMultiple: (ids: number[]) => requestJson("DELETE", "/api/shop/bulk", ids),

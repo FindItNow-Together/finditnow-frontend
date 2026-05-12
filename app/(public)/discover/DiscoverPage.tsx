@@ -43,7 +43,7 @@ export default function DiscoverClient() {
           params.set("lng", String(userLoc.lng));
         }
 
-        const res = await api.get(`/api/search/products?${params.toString()}`);
+        const res = await api.get(`/api/search/products?${params.toString()}`, { auth: "public" });
         if (!res.ok) throw new Error();
 
         const body = await res.json();
