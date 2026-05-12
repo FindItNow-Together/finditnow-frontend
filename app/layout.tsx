@@ -9,7 +9,7 @@ import { User, UserRole } from "@/types/user";
 import { cookies } from "next/headers";
 import ToasterProvider from "@/app/_components/ToasterProvider";
 
-import { APP_URL } from "@/lib/urls";
+import { INTERNAL_URL } from "@/lib/urls";
 import Script from "next/script";
 import WebSocketProvider from "@/contexts/WebSocketContext";
 
@@ -25,7 +25,7 @@ export function getBaseUrl(envUrl?: string): string {
   }
 }
 
-const internalBaseUrl = getBaseUrl(APP_URL);
+const internalBaseUrl = getBaseUrl(INTERNAL_URL);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
