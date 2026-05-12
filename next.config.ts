@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   /* config options here */
   //remove rewrites when actual production is setup
   //this is for backend prod + local frontend setup
@@ -17,9 +18,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "http",
-        hostname: "localhost", // The hostname of your image host
-        port: "80", // Optional: specify a port if needed
-        pathname: "/api/files/**", // Optional: restrict to a specific path
+        hostname: "localhost",
+        pathname: "/api/files/**",
+      },
+      {
+        protocol: "https",
+        hostname: "finditnow-together.duckdns.org",
+        pathname: "/api/files/**",
+      },
+      {
+        protocol: "https",
+        hostname: "finditnow-discover.duckdns.org",
+        pathname: "/api/files/**",
       },
     ],
   },
