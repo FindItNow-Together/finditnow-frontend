@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
+import { getImageSrc } from "@/lib/urls";
 import useDebounce from "@/hooks/useDebounce";
 import { useParams } from "next/navigation";
 import ProductSearchBar from "@/app/(public)/discover/_components/ProductSearchBar";
@@ -77,7 +78,7 @@ export default function ShopPage() {
           <div className="flex-shrink-0">
             {shop.imageUrl ? (
               <Image
-                src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
+                src={getImageSrc(shop.imageUrl)}
                 alt={shop.name}
                 width={64}
                 height={64}

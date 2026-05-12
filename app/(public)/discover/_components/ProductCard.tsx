@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { getImageSrc } from "@/lib/urls";
 import { useCart } from "@/contexts/CartContext";
 import { Opportunity } from "../types";
 
@@ -38,7 +39,7 @@ export default function ProductCard({ product, opportunities }: ProductCardProps
       {/* Image */}
       {product.imageUrl ? (
         <Image
-          src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + product.imageUrl}
+          src={getImageSrc(product.imageUrl)}
           alt={product.name}
           width={96}
           height={96}

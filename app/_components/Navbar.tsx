@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
+import { getImageSrc } from "@/lib/urls";
 import GlobalSearch from "./GlobalSearch";
 import { useEffect } from "react";
 
@@ -126,7 +127,7 @@ export default function Navbar() {
               <button className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-semibold shadow-sm">
                 {isAuthenticated && userData?.profileUrl ? (
                   <Image
-                    src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                    src={getImageSrc(userData.profileUrl)}
                     alt="Profile"
                     fill
                     sizes="36px"

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
+import { getImageSrc } from "@/lib/urls";
 import { Bell, CreditCard, LayoutDashboard, MapPin, ShoppingBag, Truck, User2 } from "lucide-react";
 import React, { useState } from "react";
 import AddressesSection from "./_components/AddressSection";
@@ -70,7 +71,7 @@ export default function Profile() {
               <div className="relative mx-auto h-20 w-20 mb-4">
                 {userData?.profileUrl ? (
                   <Image
-                    src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                    src={getImageSrc(userData.profileUrl)}
                     alt="Profile"
                     fill
                     sizes="80px"

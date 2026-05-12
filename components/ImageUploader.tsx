@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import useFileUpload from "@/hooks/useFileUpload";
+import { IMAGE_GATEWAY_URL } from "@/lib/urls";
 
 interface ImageUploaderProps {
   domain: string; // "SHOP" | "PRODUCT" | "CATEGORY"
@@ -49,10 +50,8 @@ export default function ImageUploader({
     purpose,
   });
 
-  const imageGatewayUrl = process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL || "";
-
   const displayImageUrl =
-    previewUrl || (currentImageUrl ? imageGatewayUrl + currentImageUrl : null);
+    previewUrl || (currentImageUrl ? IMAGE_GATEWAY_URL + currentImageUrl : null);
 
   const handleFile = async (file: File) => {
     // Validate file type

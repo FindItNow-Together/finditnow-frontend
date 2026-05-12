@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { CartItem } from "@/types/cart";
+import { getImageSrc } from "@/lib/urls";
 import { useState } from "react";
 
 interface CartItemCardProps {
@@ -54,7 +55,7 @@ export default function CartItemCard({ item, onUpdateQuantity, onRemove }: CartI
         <div className="flex-shrink-0">
           {item.imageUrl ? (
             <Image
-              src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + item.imageUrl}
+              src={getImageSrc(item.imageUrl)}
               alt={item.productName}
               width={96}
               height={96}

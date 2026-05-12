@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getImageSrc } from "@/lib/urls";
 import { Shop } from "@/types/shop";
 import { InventoryItem } from "@/types/inventory";
 import { OrderResponse } from "@/types/order";
@@ -414,7 +415,7 @@ export default function ShopDetailsPage() {
           {/* Shop Logo */}
           {shop.imageUrl ? (
             <Image
-              src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
+              src={getImageSrc(shop.imageUrl)}
               alt={shop.name}
               width={48}
               height={48}

@@ -16,6 +16,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build arg for the base URL (all other URLs derived from this in lib/urls.ts)
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
 # Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1
 

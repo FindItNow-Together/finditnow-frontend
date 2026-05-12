@@ -1,5 +1,6 @@
 import Image from "next/image";
 import useApi from "@/hooks/useApi";
+import { getImageSrc } from "@/lib/urls";
 import { User, UserRole } from "@/types/user";
 import { Camera, User2 } from "lucide-react";
 import { useState } from "react";
@@ -93,7 +94,7 @@ export default function ProfileSection({
               <div className="relative mb-3">
                 {userData.profileUrl ? (
                   <Image
-                    src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
+                    src={getImageSrc(userData.profileUrl)}
                     alt="Profile"
                     width={128}
                     height={128}

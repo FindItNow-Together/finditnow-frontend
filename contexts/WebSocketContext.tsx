@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import useApi from "@/hooks/useApi";
 
+import { getWebSocketUrl } from "@/lib/urls";
+
 type WebSocketContextType = {
   socket: WebSocket | null;
   connect: (orderId: string) => Promise<void>;
@@ -38,7 +40,7 @@ export default function WebSocketProvider({ children }: { children: React.ReactN
 
       // 2. Open WebSocket with the ticket
       const ws = new WebSocket(
-        process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL + `/ws-location?ticket=${ticket}`
+        getWebSocketUrl(`/ws-location?ticket=${ticket}`)
       );
 
       ws.onopen = () => {
