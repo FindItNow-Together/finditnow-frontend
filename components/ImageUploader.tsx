@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import useFileUpload from "@/hooks/useFileUpload";
 
@@ -139,11 +140,16 @@ export default function ImageUploader({
 
         {displayImageUrl ? (
           <div className="relative p-2">
-            <img
-              src={displayImageUrl}
-              alt="Preview"
-              className="w-full h-40 object-cover rounded-lg"
-            />
+            <div className="relative w-full h-40">
+              <Image
+                src={displayImageUrl}
+                alt="Preview"
+                fill
+                sizes="(max-width: 768px) 100vw, 400px"
+                className="object-cover rounded-lg"
+                unoptimized={displayImageUrl.startsWith("data:")}
+              />
+            </div>
             {!uploading && (
               <button
                 type="button"

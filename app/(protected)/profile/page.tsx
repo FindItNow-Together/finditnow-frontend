@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, CreditCard, LayoutDashboard, MapPin, ShoppingBag, Truck, User2 } from "lucide-react";
 import React, { useState } from "react";
@@ -68,10 +69,12 @@ export default function Profile() {
             <div className="mb-8 text-center">
               <div className="relative mx-auto h-20 w-20 mb-4">
                 {userData?.profileUrl ? (
-                  <img
+                  <Image
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
                     alt="Profile"
-                    className="h-full w-full rounded-lg object-cover border-2 border-gray-200"
+                    fill
+                    sizes="80px"
+                    className="rounded-lg object-cover border-2 border-gray-200"
                   />
                 ) : (
                   <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-100 text-gray-500 border-2 border-gray-200">

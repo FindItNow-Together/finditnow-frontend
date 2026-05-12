@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shop } from "@/types/shop";
@@ -412,9 +413,11 @@ export default function ShopDetailsPage() {
         <div className="flex items-center gap-4">
           {/* Shop Logo */}
           {shop.imageUrl ? (
-            <img
+            <Image
               src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
               alt={shop.name}
+              width={48}
+              height={48}
               className="w-12 h-12 rounded-full object-cover border border-gray-200"
             />
           ) : (

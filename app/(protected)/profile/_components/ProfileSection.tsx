@@ -1,3 +1,4 @@
+import Image from "next/image";
 import useApi from "@/hooks/useApi";
 import { User, UserRole } from "@/types/user";
 import { Camera, User2 } from "lucide-react";
@@ -91,9 +92,11 @@ export default function ProfileSection({
             <div className="flex flex-col items-center">
               <div className="relative mb-3">
                 {userData.profileUrl ? (
-                  <img
+                  <Image
                     src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + userData.profileUrl}
                     alt="Profile"
+                    width={128}
+                    height={128}
                     className="h-28 w-28 lg:h-32 lg:w-32 rounded-lg object-cover border-2 border-gray-200"
                   />
                 ) : (

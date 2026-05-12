@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import useApi from "@/hooks/useApi";
 import useDebounce from "@/hooks/useDebounce";
@@ -75,9 +76,11 @@ export default function ShopPage() {
           {/* Shop Logo */}
           <div className="flex-shrink-0">
             {shop.imageUrl ? (
-              <img
+              <Image
                 src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + shop.imageUrl}
                 alt={shop.name}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full object-cover border border-gray-200"
               />
             ) : (

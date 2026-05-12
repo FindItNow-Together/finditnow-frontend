@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { Opportunity } from "../types";
@@ -36,9 +37,11 @@ export default function ProductCard({ product, opportunities }: ProductCardProps
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 flex gap-4">
       {/* Image */}
       {product.imageUrl ? (
-        <img
+        <Image
           src={process.env.NEXT_PUBLIC_IMAGE_GATEWAY_URL + product.imageUrl}
           alt={product.name}
+          width={96}
+          height={96}
           className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover"
         />
       ) : (
